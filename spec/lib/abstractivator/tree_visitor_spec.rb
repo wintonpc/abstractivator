@@ -9,22 +9,22 @@ describe Abstractivator::TreeVisitor do
     {
       a: {
         b1: {
-          _id: 1,
+          _id: :asdf,
           c: 'a.b1.c'
         },
         b2: {
-          _id: 2,
+          _id: :qwerty,
           c: 'a.b2.c'
         }
       },
       d: [
            {
-             _id: 3,
+             _id: :smbc,
              e: 'd.0.e',
              f: 'd.0.f'
            },
            {
-             _id: 3,
+             _id: :roygbiv,
              e: 'd.1.e',
              f: 'd.1.f'
            }
@@ -32,6 +32,7 @@ describe Abstractivator::TreeVisitor do
     }
   end
   describe '#visit' do
+
     context 'when no block is provided' do
       it 'returns a deep copy' do
         result = transform_tree(hash)
@@ -39,6 +40,7 @@ describe Abstractivator::TreeVisitor do
         expect(result.equal?(hash)).to be_falsey
       end
     end
+
     context 'when a block is provided' do
       it 'replaces the value with the return value of the block' do
         result = transform_tree(hash) do |path, value|
@@ -52,8 +54,61 @@ describe Abstractivator::TreeVisitor do
         expect(result[:a][:b1][:c]).to eql 'b1!!'
         expect(result[:a][:b2][:c]).to eql 'b2!!'
       end
+
+      context 'examples' do
+        it 'replace all ids' do
+          result = transform_tree(hash) do |path, value|
+            case path
+              when '*/_id'
+                value.to_s
+              else
+                value
+            end
+          end
+        end
+      end
+
+      it 'when visiting a hash, if the block returns true, hash members are visited' do
+        test_hash_visiting(true, true)
+      end
+
+      it 'when visiting a hash, if the block returns false, hash members are not visited' do
+        test_hash_visiting(false, false)
+      end
+
+      it 'when visiting an array, if the block returns true, array elements are visited' do
+        test_array_visiting(true, true)
+      end
+
+      it 'when visiting an array, if the block returns false, array elements are not visited' do
+        test_array_visiting(false, false)
+      end
+
+      def test_hash_visiting(ret_val, should_visit)
+        test_visiting(ret_val, should_visit, 'a', 'a/b1')
+      end
+
+      def test_array_visiting(ret_val, should_visit)
+        test_visiting(ret_val, should_visit, 'd', 'd/0')
+      end
+
+      def test_visiting(ret_val, should_visit, key, subkey)
+        saw_it = false
+        transform_tree(hash) do |path, value|
+          case path
+            when key
+              ret_val
+            when subkey
+              saw_it = true
+            else
+              value
+          end
+        end
+        expect(saw_it).to eql should_visit
+      end
     end
   end
+
   describe '::Path' do
     Path = Abstractivator::TreeVisitor::Path
     it 'matches with ===' do

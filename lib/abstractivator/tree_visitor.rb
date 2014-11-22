@@ -16,12 +16,20 @@ module Abstractivator
       def transform(x, path)
         case x
           when Hash
-            Hash[x.map{|kv| [kv.first, transform(kv.last, cons(kv.first.to_s, path))]}]
+            if visit(path, x)
+              Hash[x.map{|kv| [kv.first, transform(kv.last, cons(kv.first.to_s, path))]}]
+            end
           when Array
-            x.each_with_index.map{|v, i| transform(v, cons(i.to_s, path))}
+            if visit(path, x)
+              x.each_with_index.map{|v, i| transform(v, cons(i.to_s, path))}
+            end
           else
-            @block.call(Path.new(list_to_enum(path).to_a.reverse), x)
+            visit(path, x)
         end
+      end
+
+      def visit(path, value)
+        @block.call(Path.new(list_to_enum(path).to_a.reverse), value)
       end
 
       def initialize(block)
