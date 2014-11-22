@@ -5,38 +5,27 @@ require 'abstractivator/cons'
 
 module Abstractivator
   class TreeVisitor
-    include Abstractivator::Collections
     include Abstractivator::Cons
 
-    def self.visit(hash, paths, &block)
-      self.new(hash, paths, block).visit_level(hash, 0, [])
+    def self.transform(hash, &block)
+      self.new(block).transform(hash, Cons.empty_list)
     end
 
-    def visit_level(x, n, path)
+    def transform(x, path)
       case x
         when Hash
-          keys_to_visit = n > @keys_by_level.size || @keys_by_level[n].include?('*') ? x.keys : @keys_by_level[n]
-          keys_to_visit.each do |name|
-            v = x[name.to_sym]
-            visit_level(v, n + 1, cons(name, path)) if v
-          end
+          Hash[x.map{|kv| [kv.first, transform(kv.last, cons(kv.first.to_s, path))]}]
         when Array
-          x.each_with_index{|v, i| visit_level(v, n + 1, cons(i.to_s, path))}
+          x.each_with_index.map{|v, i| transform(v, cons(i.to_s, path))}
         else
-          @block.(Path.new(list_to_enum(path).to_a.reverse), x)
+          @block.call(Path.new(list_to_enum(path).to_a.reverse), x)
       end
     end
 
     private
 
-    def initialize(hash, paths, block)
-      @hash = hash
-      init_paths(paths)
-      @block = block
-    end
-
-    def init_paths(paths)
-      @keys_by_level = multizip(paths.map{|p| p.split('/')}, nil).map{|names| Set.new(names.reject(&:nil?))}
+    def initialize(block)
+      @block = block || ->(_, value){value}
     end
 
     class Path
@@ -51,6 +40,6 @@ module Abstractivator
   end
 end
 
-def visit_tree(*args, &block)
-  Abstractivator::TreeVisitor.visit(*args, &block)
+def transform_tree(*args, &block)
+  Abstractivator::TreeVisitor.transform(*args, &block)
 end

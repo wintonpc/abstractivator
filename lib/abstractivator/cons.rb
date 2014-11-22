@@ -39,5 +39,6 @@ module Abstractivator
       end
     end
 
+    extend self
   end
 end
