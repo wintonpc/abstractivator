@@ -25,7 +25,7 @@ module Abstractivator
           when Array
             new_val, cont = visit(path, x)
             if cont.nil? || cont
-              x.each_with_index.map{|v, i| transform(v, cons(i.to_s, path))}
+              x.each_with_index.map{|v, i| transform(v, cons(i.to_s, path))}.reject(&:nil?)
             else
               new_val
             end

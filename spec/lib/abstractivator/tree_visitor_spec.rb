@@ -54,6 +54,19 @@ describe Abstractivator::TreeVisitor do
         expect(result[:a][:b2][:c]).to eql 'b2!!'
       end
 
+      it 'drops the array element if the block returns nil' do
+        result = transform_tree(hash) do |path, value|
+          case path
+            when 'd/0'
+              [nil, false]
+            else
+              value
+          end
+        end
+        expect(result[:d].size).to eql 1
+        expect(result[:d][0][:e]).to eql 'd.1.e'
+      end
+
       context 'examples' do
         it 'replace all ids' do
           result = transform_tree(hash) do |path, value|
