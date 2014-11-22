@@ -18,9 +18,7 @@ module Abstractivator
           when Hash
             new_val, cont = visit(path, x)
             if cont.nil? || cont
-              # Hash[x.map{|kv| [kv.first, transform(kv.last, cons(kv.first.to_s, path))]}]
               x.each_with_object({}) do |(key, value), hash|
-                # hash[key] = transform(value, cons(key.to_s, path))
                 hash[key] = transform(value, cons(key.to_s, path))
               end
             else
@@ -29,7 +27,12 @@ module Abstractivator
           when Array
             new_val, cont = visit(path, x)
             if cont.nil? || cont
-              x.each_with_index.map{|v, i| transform(v, cons(i.to_s, path))}.reject(&:nil?)
+              arr = []
+              x.each_with_index do |v, i|
+                new_val = transform(v, cons(i.to_s, path))
+                arr << new_val if new_val
+              end
+              arr
             else
               new_val
             end
@@ -39,7 +42,8 @@ module Abstractivator
       end
 
       def visit(path, value)
-        @block.call(Path.new(list_to_enum(path).to_a.reverse), value)
+        @block.call(Path.new(list_to_enum(path).to_a.reverse!), value)
+        # @block.call(Path.new(nil), value)
       end
 
       def initialize(block)
