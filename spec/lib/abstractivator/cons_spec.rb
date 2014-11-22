@@ -20,14 +20,14 @@ describe Abstractivator::Cons do
   describe '#head' do
     it 'returns the head' do
       cell = cons(1, 2)
-      expect(head(cell)).to eql 1
+      expect(cell.head).to eql 1
     end
   end
 
   describe '#tail' do
     it 'returns the tail' do
       cell = cons(1, 2)
-      expect(tail(cell)).to eql 2
+      expect(cell.tail).to eql 2
     end
   end
 

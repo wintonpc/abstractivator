@@ -1,8 +1,6 @@
 require 'rspec'
 require 'abstractivator/tree_visitor'
 
-Path = Abstractivator::TreeVisitor::Path
-
 describe Abstractivator::TreeVisitor do
 
   include Abstractivator::TreeVisitor
@@ -57,6 +55,7 @@ describe Abstractivator::TreeVisitor do
     end
   end
   describe '::Path' do
+    Path = Abstractivator::TreeVisitor::Path
     it 'matches with ===' do
       path = Path.new(%w(a b c))
       expect(path === 'a/b/c').to be_truthy
@@ -68,6 +67,31 @@ describe Abstractivator::TreeVisitor do
       expect(path === 'a/:x/c/:y').to be_truthy
       expect(path.x).to eql 'b'
       expect(path.y).to eql 'd'
+    end
+    it 'rejects multiple wildcards' do
+      path = Path.new(%w(a b))
+      expect{path === '*/*'}.to raise_error ArgumentError, 'Cannot have more than one wildcard'
+    end
+    it 'rejects mixtures of wildcards and pattern variables' do
+      path = Path.new(%w(a b))
+      expect{path === '*/:x'}.to raise_error ArgumentError, 'Cannot mix wildcard with pattern variables'
+    end
+    it 'allows a wildcard' do
+      path = Path.new(%w(foo things 3 thing _id))
+      expect(path === 'foo/things/*/_id').to be_truthy
+      expect(path === 'foo/things/*/xyz').to be_falsey
+      expect(path === 'foo/things/a/b/c/d*/xyz').to be_falsey
+      expect(path === 'foo/things/*/a/b/c/d/xyz').to be_falsey
+      expect(path === 'foo/*/xyz').to be_falsey
+    end
+    it 'wildcard matches zero or more' do
+      path = Path.new(%w(foo bar))
+      expect(path === 'foo/*/bar').to be_truthy
+    end
+    it 'wilcards can be open ended' do
+      path = Path.new(%w(a b c))
+      expect(path === 'a/*').to be_truthy
+      expect(path === '*/c').to be_truthy
     end
   end
 end

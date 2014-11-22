@@ -30,6 +30,8 @@ module Abstractivator
     end
 
     class Path < OpenStruct
+      include Abstractivator::Cons
+
       def initialize(names)
         super(nil)
         @names = names
@@ -41,7 +43,14 @@ module Abstractivator
 
       def ===(other)
         onames = other.split('/')
+
+        # is it a wildcard?
+        wildcard_result = try_match_wildcard(onames)
+        return wildcard_result unless wildcard_result.nil?
+
+        # not a wildcard, so path lengths must match
         return false if @names.size != onames.size
+
         @names.zip(onames).map {|a, b|
           bstr = b.to_s
           if bstr[0] == ':'
@@ -51,6 +60,46 @@ module Abstractivator
             a == b
           end
         }.all?
+      end
+
+      def try_match_wildcard(onames)
+        wildcards = onames.select{|x| x == '*'}
+        if wildcards.size == 0
+          return nil
+        elsif wildcards.size > 1
+          raise ArgumentError.new('Cannot have more than one wildcard')
+        end
+        if onames.any?{|x| x[0] == ':'}
+          raise ArgumentError.new('Cannot mix wildcard with pattern variables')
+        end
+
+        matching(enum_to_list(@names), enum_to_list(onames))
+      end
+
+      def matching(path, pat)
+        if path == empty_list && pat == empty_list
+          true
+        elsif path == empty_list || pat == empty_list
+          false
+        elsif pat.head == '*'
+          wildcarding(path, pat.tail)
+        elsif pat.head != path.head
+          false
+        else
+          matching(path.tail, pat.tail)
+        end
+      end
+
+      def wildcarding(path, pat)
+        if pat == empty_list
+          true
+        elsif path == empty_list
+          false
+        elsif path.head == pat.head
+          matching(path.tail, pat.tail)
+        else
+          wildcarding(path.tail, pat)
+        end
       end
     end
   end

@@ -7,7 +7,7 @@ module Abstractivator
     end
 
     def cons(h, t)
-      [h, t]
+      Cell.new(h, t)
     end
 
     def head(p)
@@ -36,6 +36,20 @@ module Abstractivator
         end
       rescue StopIteration
         result
+      end
+    end
+
+    class Cell < Array
+      def initialize(h, t)
+        super([h, t])
+      end
+
+      def head
+        first
+      end
+
+      def tail
+        last
       end
     end
 
