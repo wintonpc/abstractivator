@@ -16,12 +16,18 @@ module Abstractivator
       def transform(x, path)
         case x
           when Hash
-            if visit(path, x)
+            new_val, cont = visit(path, x)
+            if cont.nil? || cont
               Hash[x.map{|kv| [kv.first, transform(kv.last, cons(kv.first.to_s, path))]}]
+            else
+              new_val
             end
           when Array
-            if visit(path, x)
+            new_val, cont = visit(path, x)
+            if cont.nil? || cont
               x.each_with_index.map{|v, i| transform(v, cons(i.to_s, path))}
+            else
+              new_val
             end
           else
             visit(path, x)
@@ -33,7 +39,8 @@ module Abstractivator
       end
 
       def initialize(block)
-        @block = block || ->(_, value){value}
+        raise ArgumentError.new('Must provide a transformer block') unless block
+        @block = block
       end
     end
 
