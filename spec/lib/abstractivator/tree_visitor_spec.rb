@@ -167,7 +167,7 @@ describe Abstractivator::TreeVisitor do
       expect(path === 'foo/*/bar').to be_truthy
     end
 
-    it 'wilcards can be open ended' do
+    it 'wildcards can be open ended' do
       path = make_path(%w(a b c))
       expect(path === 'a/*').to be_truthy
       expect(path === '*/c').to be_truthy
@@ -190,7 +190,12 @@ describe Abstractivator::TreeVisitor do
 
     time_it(:transform_tree) do
       ac2 = transform_tree(ac) do |path, value|
-        value
+        case path
+          when 'compound_methods'; value
+          when 'compound_methods/:idx/chromatogram_methods'; value
+          when '*/_id'; value
+          else; value
+        end
       end
     end
   end
@@ -201,7 +206,7 @@ describe Abstractivator::TreeVisitor do
       yield
     ensure
       stop = Time.now
-      puts "#{name} took #{(stop - start) * 1000} ms"
+      puts "#{name} took #{((stop - start) * 1000).round} ms"
     end
   end
 end

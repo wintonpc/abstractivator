@@ -36,22 +36,27 @@ module Abstractivator
         end
       end
 
-      # def to_s
-      #   @names.join('/')
-      # end
+      def to_s
+        list_to_enum(@names).to_a.reverse.join('/')
+      end
 
-      def ===(other)
-        pat = @patterns[other]
+      def ===(pat_str)
+        pat = @patterns[pat_str]
         unless pat
-          pat = Pattern.new(other)
-          @patterns[other] = pat
+          # puts "instantiating pattern: #{pat_str}"
+          pat = Pattern.new(pat_str)
+          @patterns[pat_str] = pat
         end
 
         if pat.is_wildcard
+          # puts "#{self} === #{pat_str} (with wildcard)"
           matching(@names, pat.names)
         elsif @name_count != pat.length # not a wildcard, so path lengths must match
           false
         else
+          # puts
+          # puts "=== #{self}"
+          # puts "    #{pat_str}"
           match_no_wildcards(@names, pat.names)
         end
       end
