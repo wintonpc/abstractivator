@@ -5,4 +5,6 @@ gemspec
 
 group :test do
   gem 'rspec'
+  gem 'json'
+  gem 'rails'
 end

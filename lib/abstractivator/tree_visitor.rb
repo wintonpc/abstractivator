@@ -18,7 +18,11 @@ module Abstractivator
           when Hash
             new_val, cont = visit(path, x)
             if cont.nil? || cont
-              Hash[x.map{|kv| [kv.first, transform(kv.last, cons(kv.first.to_s, path))]}]
+              # Hash[x.map{|kv| [kv.first, transform(kv.last, cons(kv.first.to_s, path))]}]
+              x.each_with_object({}) do |(key, value), hash|
+                # hash[key] = transform(value, cons(key.to_s, path))
+                hash[key] = transform(value, cons(key.to_s, path))
+              end
             else
               new_val
             end

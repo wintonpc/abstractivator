@@ -1,5 +1,7 @@
 require 'rspec'
 require 'abstractivator/tree_visitor'
+require 'json'
+require 'rails'
 
 describe Abstractivator::TreeVisitor do
 
@@ -167,6 +169,33 @@ describe Abstractivator::TreeVisitor do
       path = Path.new(%w(a b c))
       expect(path === 'a/*').to be_truthy
       expect(path === '*/c').to be_truthy
+    end
+  end
+
+  it 'performs' do
+
+    ac = JSON.parse(File.read('assay.json'))
+
+    ac2 = nil
+
+    time_it(:deep_dup) do
+      ac2 = ac.deep_dup
+    end
+
+    time_it(:transform_tree) do
+      ac2 = transform_tree(ac) do |path, value|
+        value
+      end
+    end
+  end
+
+  def time_it(name)
+    start = Time.now
+    begin
+      yield
+    ensure
+      stop = Time.now
+      puts "#{name} took #{(stop - start) * 1000} ms"
     end
   end
 end
