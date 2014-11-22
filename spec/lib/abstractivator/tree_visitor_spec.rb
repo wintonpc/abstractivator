@@ -127,32 +127,34 @@ describe Abstractivator::TreeVisitor do
   describe '::Path' do
     Path = Abstractivator::TreeVisitor::Path
 
+    include Abstractivator::Cons
+
     it 'matches with ===' do
-      path = Path.new(%w(a b c))
+      path = make_path(%w(a b c))
       expect(path === 'a/b/c').to be_truthy
       expect(path === 'a/b/d').to be_falsey
       expect(path === 'a/b').to be_falsey
     end
 
     it 'captures match groups' do
-      path = Path.new(%w(a b c d))
+      path = make_path(%w(a b c d))
       expect(path === 'a/:x/c/:y').to be_truthy
       expect(path.x).to eql 'b'
       expect(path.y).to eql 'd'
     end
 
     it 'rejects multiple wildcards' do
-      path = Path.new(%w(a b))
+      path = make_path(%w(a b))
       expect{path === '*/*'}.to raise_error ArgumentError, 'Cannot have more than one wildcard'
     end
 
     it 'rejects mixtures of wildcards and pattern variables' do
-      path = Path.new(%w(a b))
+      path = make_path(%w(a b))
       expect{path === '*/:x'}.to raise_error ArgumentError, 'Cannot mix wildcard with pattern variables'
     end
 
     it 'allows a wildcard' do
-      path = Path.new(%w(foo things 3 thing _id))
+      path = make_path(%w(foo things 3 thing _id))
       expect(path === 'foo/things/*/_id').to be_truthy
       expect(path === 'foo/things/*/xyz').to be_falsey
       expect(path === 'foo/things/a/b/c/d*/xyz').to be_falsey
@@ -161,14 +163,18 @@ describe Abstractivator::TreeVisitor do
     end
 
     it 'wildcard matches zero or more' do
-      path = Path.new(%w(foo bar))
+      path = make_path(%w(foo bar))
       expect(path === 'foo/*/bar').to be_truthy
     end
 
     it 'wilcards can be open ended' do
-      path = Path.new(%w(a b c))
+      path = make_path(%w(a b c))
       expect(path === 'a/*').to be_truthy
       expect(path === '*/c').to be_truthy
+    end
+
+    def make_path(names)
+      Path.new(enum_to_list(names.reverse), names.size, {})
     end
   end
 
