@@ -178,74 +178,68 @@ describe Abstractivator::TreeVisitor do
     end
   end
 
-  # it 'performs' do
-  #
-  #   ac = JSON.parse(File.read('assay.json'))
-  #
-  #   ac2 = nil
-  #
-  #   time_it(:deep_dup) do
-  #     ac2 = ac.deep_dup
-  #   end
-  #
-  #   time_it(:ad_hoc) do
-  #     ac2 = ac.deep_dup
-  #     ac2['compound_methods'].each do |cm|
-  #       cal = cm['calibration']
-  #       cal['normalizers'].map!{|x| x.to_s.reverse}
-  #       cal['responses'].map!{|x| x.to_s.reverse}
-  #
-  #       rs = cm['rule_settings']
-  #       rs.each_pair do |k, v|
-  #         rs[k] = v.to_s.reverse
-  #       end
-  #
-  #       cm['chromatogram_methods'].each do |chrom|
-  #         ret_time = chrom['peak_integration']['retention_time']
-  #
-  #         if ret_time['reference_type_source'] == 'chromatogram'
-  #           ret_time[:reference] = ret_time[:reference].to_s.reverse
-  #         end
-  #
-  #         rs = chrom['rule_settings']
-  #         rs.each_pair do |k, v|
-  #           rs[k] = v.to_s.reverse
-  #         end
-  #       end
-  #
-  #     end
-  #   end
-  #
-  #   time_it(:transform_tree) do
-  #     ac2 = transform_tree(ac) do |path, value|
-  #       case path
-  #         when 'compound_methods/:_/calibration/normalizers/:_'
-  #           value.to_s.reverse
-  #         when 'compound_methods/:_/calibration/responses/:_'
-  #           value.to_s.reverse
-  #         when 'compound_methods/:_/rule_settings/:key'
-  #           value.to_s.reverse
-  #         when 'compound_methods/:_/chromatogram_methods/:_rule_settings/:key'
-  #           value.to_s.reverse
-  #         when 'compound_methods/:_/chromatogram_methods/:_/peak_integration/retention_time'
-  #           if value['reference_type_source'] == 'chromatogram'
-  #             value['reference'] = value['reference'].to_s.reverse
-  #             [value, false]
-  #           else
-  #             [value, false]
-  #           end
-  #         # when 'qa_rule_schemas'
-  #         #   [value, false]
-  #         # when 'compound_methods/:_/chromatogram_methods/:_/peak_integration/threshold'
-  #         #   [value, false]
-  #         # when 'compound_methods/:_/chromatogram_methods/:_/peak_integration/smoothing'
-  #         #   [value, false]
-  #         else
-  #           value
-  #       end
-  #     end
-  #   end
-  # end
+  it 'performs' do
+
+    ac = JSON.parse(File.read('assay.json'))
+
+    ac2 = nil
+
+    time_it(:deep_dup) do
+      ac2 = ac.deep_dup
+    end
+
+    time_it(:ad_hoc) do
+      ac2 = ac.deep_dup
+      ac2['compound_methods'].each do |cm|
+        cal = cm['calibration']
+        cal['normalizers'].map!{|x| x.to_s.reverse}
+        cal['responses'].map!{|x| x.to_s.reverse}
+
+        rs = cm['rule_settings']
+        rs.each_pair do |k, v|
+          rs[k] = v.to_s.reverse
+        end
+
+        cm['chromatogram_methods'].each do |chrom|
+          ret_time = chrom['peak_integration']['retention_time']
+
+          if ret_time['reference_type_source'] == 'chromatogram'
+            ret_time[:reference] = ret_time[:reference].to_s.reverse
+          end
+
+          rs = chrom['rule_settings']
+          rs.each_pair do |k, v|
+            rs[k] = v.to_s.reverse
+          end
+        end
+
+      end
+    end
+
+    time_it(:transform_tree) do
+      ac2 = transform_tree(ac) do |path, value|
+        case path
+          when 'compound_methods/:_/calibration/normalizers/:_'
+            value.to_s.reverse
+          when 'compound_methods/:_/calibration/responses/:_'
+            value.to_s.reverse
+          when 'compound_methods/:_/rule_settings/:key'
+            value.to_s.reverse
+          when 'compound_methods/:_/chromatogram_methods/:_rule_settings/:key'
+            value.to_s.reverse
+          when 'compound_methods/:_/chromatogram_methods/:_/peak_integration/retention_time'
+            if value['reference_type_source'] == 'chromatogram'
+              value['reference'] = value['reference'].to_s.reverse
+              [value, false]
+            else
+              [value, false]
+            end
+          else
+            value
+        end
+      end
+    end
+  end
 
   def time_it(name)
     start = Time.now
