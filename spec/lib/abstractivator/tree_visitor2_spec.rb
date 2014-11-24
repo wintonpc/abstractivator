@@ -112,43 +112,43 @@ describe Abstractivator::TreeVisitor do
 
     ac = JSON.parse(File.read('assay.json'))
 
-    # ac2 = nil
-    #
-    # time_it(:deep_dup) do
-    #   ac2 = ac.deep_dup
-    # end
-    #
-    # time_it(:ad_hoc) do
-    #   ac2 = ac.deep_dup
-    #   ac2['compound_methods'].each do |cm|
-    #     cal = cm['calibration']
-    #     cal['normalizers'].map!{|x| x.to_s.reverse}
-    #     cal['responses'].map!{|x| x.to_s.reverse}
-    #
-    #     rs = cm['rule_settings']
-    #     rs.each_pair do |k, v|
-    #       rs[k] = v.to_s.reverse
-    #     end
-    #
-    #     cm['chromatogram_methods'].each do |chrom|
-    #       ret_time = chrom['peak_integration']['retention_time']
-    #
-    #       if ret_time['reference_type_source'] == 'chromatogram'
-    #         ret_time[:reference] = ret_time[:reference].to_s.reverse
-    #       end
-    #
-    #       rs = chrom['rule_settings']
-    #       rs.each_pair do |k, v|
-    #         rs[k] = v.to_s.reverse
-    #       end
-    #     end
-    #
-    #   end
-    # end
+    ac2 = nil
 
-    ac_tt = nil
+    time_it(:deep_dup) do
+      ac2 = ac.deep_dup
+    end
+
+    time_it(:ad_hoc) do
+      ac2 = ac.deep_dup
+      ac2['compound_methods'].each do |cm|
+        cal = cm['calibration']
+        cal['normalizers'].map!{|x| x.to_s.reverse}
+        cal['responses'].map!{|x| x.to_s.reverse}
+
+        rs = cm['rule_settings']
+        rs.each_pair do |k, v|
+          rs[k] = v.to_s.reverse
+        end
+
+        cm['chromatogram_methods'].each do |chrom|
+          ret_time = chrom['peak_integration']['retention_time']
+
+          if ret_time['reference_type_source'] == 'chromatogram'
+            ret_time[:reference] = ret_time[:reference].to_s.reverse
+          end
+
+          rs = chrom['rule_settings']
+          rs.each_pair do |k, v|
+            rs[k] = v.to_s.reverse
+          end
+        end
+
+      end
+    end
+
+    # ac_tt = nil
     # time_it(:transform_tree) do
-    #   ac_tt = transform_tree(ac) do |path, value|
+    #   ac_tt = transform_tree(ac.deep_dup) do |path, value|
     #     case path
     #       when 'compound_methods/:_/calibration/normalizers/:_'
     #         value.to_s.reverse
@@ -171,13 +171,14 @@ describe Abstractivator::TreeVisitor do
     #   end
     # end
 
+    ac3 = ac.deep_dup
     ac_tt2 = nil
     time_it(:transform_tree2) do
-      ac_tt2 = transform_tree2(ac) do |t|
-        # t.when('compound_methods/calibration/normalizers[]') {|v| v.to_s.reverse}
-        # t.when('compound_methods/calibration/responses[]') {|v| v.to_s.reverse}
-        # t.when('compound_methods/rule_settings{}') {|v| v.to_s.reverse}
-        # t.when('compound_methods/chromatogram_methods/rule_settings{}') {|v| v.to_s.reverse}
+      ac_tt2 = transform_tree2(ac3) do |t|
+        t.when('compound_methods/calibration/normalizers[]') {|v| v.to_s.reverse}
+        t.when('compound_methods/calibration/responses[]') {|v| v.to_s.reverse}
+        t.when('compound_methods/rule_settings{}') {|v| v.to_s.reverse}
+        t.when('compound_methods/chromatogram_methods/rule_settings{}') {|v| v.to_s.reverse}
         t.when('compound_methods/chromatogram_methods/peak_integration/retention_time') do |ret_time|
           if ret_time['reference_type_source'] == 'chromatogram'
             ret_time['reference'] = ret_time['reference'].to_s.reverse
@@ -187,10 +188,10 @@ describe Abstractivator::TreeVisitor do
       end
     end
 
-    File.write('a.json', JSON.dump(ac_tt))
-    File.write('b.json', JSON.dump(ac_tt2))
-
-    expect(ac_tt2).to eql ac_tt
+    # File.write('a.json', JSON.dump(ac_tt))
+    # File.write('b.json', JSON.dump(ac_tt2))
+    #
+    # expect(ac_tt2).to eql ac_tt
 
   end
 

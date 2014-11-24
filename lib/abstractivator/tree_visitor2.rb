@@ -34,11 +34,9 @@ module Abstractivator
             h[array_name] = h[array_name].map(&:deep_dup).map(&path_tree)
           else
             h[name] = path_tree.call(h[name].deep_dup)
-            puts 'here'
           end
         else
           h[name] = do_obj(h[name], path_tree)
-          puts 'here'
         end
       end
       h
