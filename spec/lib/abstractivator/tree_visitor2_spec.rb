@@ -43,6 +43,12 @@ describe Abstractivator::TreeVisitor do
       end
     end
 
+    it 'replaces hash members'
+    it 'replaces array members'
+    it 'replaces hashes'
+    it 'replaces arrays'
+    it 'replaces primitive values'
+
     context 'when a block is provided' do
       it 'replaces the value with the return value of the block' do
         result = transform_tree2(hash) do |t|
@@ -110,17 +116,19 @@ describe Abstractivator::TreeVisitor do
 
   it 'performs' do
 
-    ac = JSON.parse(File.read('assay.json'))
+    ac_in = JSON.parse(File.read('assay.json'))
 
-    ac2 = nil
-
+    ac_in1 = ac_in.deep_dup
+    ac_out1 = nil
     time_it(:deep_dup) do
-      ac2 = ac.deep_dup
+      ac_out1 = ac_in1.deep_dup
     end
 
+    ac_in2 = ac_in.deep_dup
+    ac_out2 = nil
     time_it(:ad_hoc) do
-      ac2 = ac.deep_dup
-      ac2['compound_methods'].each do |cm|
+      ac_out2 = ac_in2.deep_dup
+      ac_out2['compound_methods'].each do |cm|
         cal = cm['calibration']
         cal['normalizers'].map!{|x| x.to_s.reverse}
         cal['responses'].map!{|x| x.to_s.reverse}
@@ -146,35 +154,10 @@ describe Abstractivator::TreeVisitor do
       end
     end
 
-    # ac_tt = nil
-    # time_it(:transform_tree) do
-    #   ac_tt = transform_tree(ac.deep_dup) do |path, value|
-    #     case path
-    #       when 'compound_methods/:_/calibration/normalizers/:_'
-    #         value.to_s.reverse
-    #       when 'compound_methods/:_/calibration/responses/:_'
-    #         value.to_s.reverse
-    #       when 'compound_methods/:_/rule_settings/:key'
-    #         value.to_s.reverse
-    #       when 'compound_methods/:_/chromatogram_methods/:_/rule_settings/:key'
-    #         value.to_s.reverse
-    #       when 'compound_methods/:_/chromatogram_methods/:_/peak_integration/retention_time'
-    #         if value['reference_type_source'] == 'chromatogram'
-    #           value['reference'] = value['reference'].to_s.reverse
-    #           [value, false]
-    #         else
-    #           [value, false]
-    #         end
-    #       else
-    #         value
-    #     end
-    #   end
-    # end
-
-    ac3 = ac.deep_dup
-    ac_tt2 = nil
+    ac_in3 = ac_in.deep_dup
+    ac_out3 = nil
     time_it(:transform_tree2) do
-      ac_tt2 = transform_tree2(ac3) do |t|
+      ac_out3 = transform_tree2(ac_in3) do |t|
         t.when('compound_methods/calibration/normalizers[]') {|v| v.to_s.reverse}
         t.when('compound_methods/calibration/responses[]') {|v| v.to_s.reverse}
         t.when('compound_methods/rule_settings{}') {|v| v.to_s.reverse}
@@ -194,77 +177,6 @@ describe Abstractivator::TreeVisitor do
     # expect(ac_tt2).to eql ac_tt
 
   end
-
-  # def do_obj(obj, path_tree)
-  #   obj.is_a?(Array) ?
-  #     do_array(obj, path_tree) :
-  #     do_hash(obj, path_tree)
-  # end
-  #
-  # def do_hash(h, path_tree)
-  #   h = h.dup
-  #   path_tree.each_pair do |name, path_tree|
-  #     if path_tree.respond_to?(:call)
-  #       if (hash_name = try_get_hash_name(name))
-  #         h[hash_name] = h[hash_name].each_with_object(h[hash_name].dup) do |(key, value), fh|
-  #           fh[key] = path_tree.call(value.deep_dup)
-  #         end
-  #       elsif (array_name = try_get_array_name(name))
-  #         h[array_name] = h[array_name].map(&:deep_dup).map(&path_tree)
-  #       else
-  #         h[name] = path_tree.call(h[name].deep_dup)
-  #       end
-  #     else
-  #       do_obj(h[name], path_tree)
-  #     end
-  #   end
-  #   h
-  # end
-  #
-  # def safe_dup(x)
-  #   x.nil? ? nil : x
-  # end
-  #
-  # def do_array(a, path_tree)
-  #   a.map{|x| do_obj(x, path_tree)}
-  # end
-  #
-  # def try_get_hash_name(p)
-  #   p =~ /(.+)\{\}$/ ? $1 : nil
-  # end
-  #
-  # def try_get_array_name(p)
-  #   p =~ /(.+)\[\]$/ ? $1 : nil
-  # end
-  #
-  # def transform_tree2(h)
-  #   config = BlockCollector.new
-  #   yield(config)
-  #   do_obj(h, get_path_tree(config))
-  # end
-  #
-  # def get_path_tree(config)
-  #   path_tree = {}
-  #   config.each_pair do |path, block|
-  #     set_hash_path(path_tree, path.split('/'), block)
-  #   end
-  #   path_tree
-  # end
-  #
-  # def set_hash_path(h, names, block)
-  #   orig = h
-  #   while names.size > 1
-  #     h = (h[names.shift] ||= {})
-  #   end
-  #   h[names.shift] = block
-  #   orig
-  # end
-  #
-  # class BlockCollector < Hash
-  #   def when(path, &block)
-  #     self[path] = block
-  #   end
-  # end
 
   def time_it(name)
     start = Time.now
