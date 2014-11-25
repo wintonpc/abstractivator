@@ -26,85 +26,65 @@ describe Abstractivator::TreeVisitor do
 
     it 'replaces primitive-type hash fields' do
       h = {'a' => 1}
-      result = transform_tree(h) do |t|
-        t.when('a') { 2 }
-      end
+      result = transform_one_path(h, 'a') { 2 }
       expect(result).to eql({'a' => 2})
     end
 
     it 'replaces hash-type hash fields' do
       h = {'a' => {'b' => 1}}
-      result = transform_tree(h) do |t|
-        t.when('a') { {'z' => 99} }
-      end
+      result = transform_one_path(h, 'a') { {'z' => 99} }
       expect(result).to eql({'a' => {'z' => 99}})
     end
 
     it 'replaces array-type hash fields' do
       h = {'a' => [1,2,3]}
-      result = transform_tree(h) do |t|
-        t.when('a') {|v| v.reverse}
-      end
+      result = transform_one_path(h, 'a') {|v| v.reverse}
       expect(result).to eql({'a' => [3,2,1]})
     end
 
     it 'replaces primitive-type hash members' do
       h = {'a' => {'b' => 'foo', 'c' => 'bar'}}
-      result = transform_tree(h) do |t|
-        t.when('a{}') {|v| v.reverse}
-      end
+      result = transform_one_path(h, 'a{}') {|v| v.reverse}
       expect(result).to eql({'a' => {'b' => 'oof', 'c' => 'rab'}})
     end
 
     it 'replaces hash-type hash members' do
       h = {'a' => {'b' => {'x' => 88}, 'c' => {'x' => 88}}}
-      result = transform_tree(h) do |t|
-        t.when('a{}') {|v| {'y' => 99}}
-      end
+      result = transform_one_path(h, 'a{}') {|v| {'y' => 99}}
       expect(result).to eql({'a' => {'b' => {'y' => 99}, 'c' => {'y' => 99}}})
     end
 
     it 'replaces array-type hash members' do
       h = {'a' => {'b' => [1,2,3], 'c' => [4,5,6]}}
-      result = transform_tree(h) do |t|
-        t.when('a{}') {|v| v.reverse}
-      end
+      result = transform_one_path(h, 'a{}') {|v| v.reverse}
       expect(result).to eql({'a' => {'b' => [3,2,1], 'c' => [6,5,4]}})
     end
 
     it 'replaces primitive-type array members' do
       h = {'a' => [1, 2]}
-      result = transform_tree(h) do |t|
-        t.when('a[]') {|v| v + 10}
-      end
+      result = transform_one_path(h, 'a[]') {|v| v + 10}
       expect(result).to eql({'a' => [11, 12]})
     end
 
     it 'replaces hash-type array members' do
       h = {'a' => [{'b' => 1}, {'c' => 2}]}
-      result = transform_tree(h) do |t|
-        t.when('a[]') { {'z' => 99} }
-      end
+      result = transform_one_path(h, 'a[]') { {'z' => 99} }
       expect(result).to eql({'a' => [{'z' => 99}, {'z' => 99}]})
     end
 
     it 'replaces array-type array members' do
       h = {'a' => [[1,2,3], [4,5,6]]}
-      result = transform_tree(h) do |t|
-        t.when('a[]') {|v| v.reverse}
-      end
+      result = transform_one_path(h, 'a[]') {|v| v.reverse}
       expect(result).to eql({'a' => [[3,2,1], [6,5,4]]})
     end
 
     context 'mutation' do
       before(:each) do
         @old = {'a' => {'x' => 1, 'y' => 2}, 'b' => {'x' => 17, 'y' => 23}}
-        @new = transform_tree(@old) do |t|
-          t.when('a') {|v|
-            v['z'] = v['x'] + v['y']
-            v
-          }
-        end
+        @new = transform_one_path(@old,'a') {|v|
+          v['z'] = v['x'] + v['y']
+          v
+        }
       end
       it 'does not mutate the input' do
         expect(@old).to eql({'a' => {'x' => 1, 'y' => 2}, 'b' => {'x' => 17, 'y' => 23}})
@@ -113,6 +93,12 @@ describe Abstractivator::TreeVisitor do
       it 'preserves unmodified substructure' do
         expect(@old['a'].equal?(@new['a'])).to be_falsey
         expect(@old['b'].equal?(@new['b'])).to be_truthy
+      end
+    end
+
+    def transform_one_path(h, path, &block)
+      transform_tree(h) do |t|
+        t.when(path, &block)
       end
     end
   end
