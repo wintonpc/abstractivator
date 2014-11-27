@@ -2,6 +2,7 @@ require 'rspec'
 require 'abstractivator/tree_visitor'
 require 'json'
 require 'rails'
+require 'pp'
 
 describe Abstractivator::TreeVisitor do
 
@@ -93,6 +94,24 @@ describe Abstractivator::TreeVisitor do
       it 'preserves unmodified substructure' do
         expect(@old['a'].equal?(@new['a'])).to be_falsey
         expect(@old['b'].equal?(@new['b'])).to be_truthy
+      end
+
+      it 'really does not mutate the input' do
+        old = JSON.parse(File.read('assay.json'))
+        old2 = old.deep_dup
+        transform_tree(old) do |t|
+          t.when('compound_methods/calibration/normalizers[]') {|v| v.to_s.reverse}
+          t.when('compound_methods/calibration/responses[]') {|v| v.to_s.reverse}
+          t.when('compound_methods/rule_settings{}') {|v| v.to_s.reverse}
+          t.when('compound_methods/chromatogram_methods/rule_settings{}') {|v| v.to_s.reverse}
+          t.when('compound_methods/chromatogram_methods/peak_integration/retention_time') do |ret_time|
+            if ret_time['reference_type_source'] == 'chromatogram'
+              ret_time['reference'] = ret_time['reference'].to_s.reverse
+            end
+            ret_time
+          end
+        end
+        expect(old).to eql old2
       end
     end
 
