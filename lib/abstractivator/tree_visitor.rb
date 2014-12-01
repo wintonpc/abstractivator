@@ -31,12 +31,16 @@ module Abstractivator
           if path_tree.respond_to?(:call)
             if (hash_name = try_get_hash_name(name))
               hash_name, old_fh = get_key_and_value(h, hash_name)
-              h[hash_name] = old_fh.each_with_object(old_fh.dup) do |(key, value), fh|
-                fh[key] = path_tree.call(value.deep_dup)
+              unless old_fh.nil?
+                h[hash_name] = old_fh.each_with_object(old_fh.dup) do |(key, value), fh|
+                  fh[key] = path_tree.call(value.deep_dup)
+                end
               end
             elsif (array_name = try_get_array_name(name))
               array_name, value = get_key_and_value(h, array_name)
-              h[array_name] = value.map(&:deep_dup).map(&path_tree)
+              unless value.nil?
+                h[array_name] = value.map(&:deep_dup).map(&path_tree)
+              end
             else
               name, value = get_key_and_value(h, name)
               h[name] = path_tree.call(value.deep_dup)

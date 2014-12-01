@@ -31,6 +31,12 @@ describe Abstractivator::TreeVisitor do
       expect(result).to eql({'a' => 2})
     end
 
+    it 'replaces nil hash fields' do
+      h = {'a' => nil}
+      result = transform_one_path(h, 'a') {|v| v.to_s}
+      expect(result).to eql({'a' => ''})
+    end
+
     it 'replaces hash-type hash fields' do
       h = {'a' => {'b' => 1}}
       result = transform_one_path(h, 'a') { {'z' => 99} }
@@ -77,6 +83,22 @@ describe Abstractivator::TreeVisitor do
       h = {'a' => [[1,2,3], [4,5,6]]}
       result = transform_one_path(h, 'a[]') {|v| v.reverse}
       expect(result).to eql({'a' => [[3,2,1], [6,5,4]]})
+    end
+
+    context 'when replacing array members' do
+      it 'allows the array to be nil' do
+        h = {'a' => nil}
+        result = transform_one_path(h, 'a[]') {|v| v + 1}
+        expect(result).to eql({'a' => nil})
+      end
+    end
+
+    context 'when replacing hash members' do
+      it 'allows the hash to be nil' do
+        h = {'a' => nil}
+        result = transform_one_path(h, 'a{}') {|v| v + 1}
+        expect(result).to eql({'a' => nil})
+      end
     end
 
     context 'mutation' do
