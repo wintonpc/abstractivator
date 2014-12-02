@@ -1,3 +1,4 @@
+require 'active_support'
 require 'abstractivator/tree_visitor/block_collector'
 
 module Abstractivator
