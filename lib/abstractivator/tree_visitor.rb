@@ -3,14 +3,26 @@ require 'abstractivator/tree_visitor/block_collector'
 module Abstractivator
   module TreeVisitor
 
+    def recursive_delete!(hash, keys)
+      x = hash # hash is named 'hash' for documentation purposes but may be anything
+      case x
+        when Hash
+          keys.each{|k| x.delete(k)}
+          x.each_value{|v| recursive_delete!(v, keys)}
+        when Array
+          x.each{|v| recursive_delete!(v, keys)}
+      end
+      x
+    end
+
     def transform_tree(h)
       raise ArgumentError.new('Must provide a transformer block') unless block_given?
       config = BlockCollector.new
       yield(config)
-      Closure.new.do_obj(h, config.get_path_tree)
+      TransformTreeClosure.new.do_obj(h, config.get_path_tree)
     end
 
-    class Closure
+    class TransformTreeClosure
       def initialize
         @bias = 0 # symbol = +, string = -
       end
