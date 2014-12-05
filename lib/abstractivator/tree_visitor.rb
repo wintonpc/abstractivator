@@ -16,6 +16,60 @@ module Abstractivator
       x
     end
 
+    def tree_compare(tree, mask, path=[], index=nil)
+      if mask == [:*] && tree.is_a?(Enumerable)
+        []
+      elsif mask == :+ && tree != :__missing__
+        []
+      elsif mask == :- && tree != :__missing__
+        [diff(path, tree, :__absent__)]
+      elsif mask.respond_to?(:call)
+        comparable = mask.call(tree)
+        comparable ? [] : [diff(path, tree, mask)]
+      else
+        case mask
+          when Hash
+            if tree.is_a?(Hash)
+              mask.each_pair.flat_map do |k, v|
+                tree_compare(tree.fetch(k, :__missing__), v, push_path(path, k))
+              end
+            else
+              [diff(path, tree, mask)]
+            end
+          when Enumerable
+            if tree.is_a?(Enumerable)
+              index ||= 0
+              if !tree.any? && !mask.any?
+                []
+              elsif !tree.any?
+                [diff(push_path(path, index.to_s), :__missing__, mask)]
+              elsif !mask.any?
+                [diff(push_path(path, index.to_s), tree, :__absent__)]
+              else
+                tree_compare(tree.first, mask.first, push_path(path, index.to_s)) +
+                    tree_compare(tree.drop(1), mask.drop(1), path, index + 1)
+              end
+            else
+              [diff(path, tree, mask)]
+            end
+          else
+            tree == mask ? [] : [diff(path, tree, mask)]
+        end
+      end
+    end
+
+    def diff(path, tree, mask)
+      {path: path_string(path), tree: tree, mask: mask}
+    end
+
+    def push_path(path, name)
+      path + [name]
+    end
+
+    def path_string(path)
+      path.join('/')
+    end
+
     def transform_tree(h)
       raise ArgumentError.new('Must provide a transformer block') unless block_given?
       config = BlockCollector.new
