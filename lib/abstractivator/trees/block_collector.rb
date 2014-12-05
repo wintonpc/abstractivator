@@ -1,5 +1,5 @@
 module Abstractivator
-  module TreeVisitor
+  module Trees
 
     class BlockCollector
       def initialize

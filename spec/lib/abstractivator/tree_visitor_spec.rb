@@ -1,24 +1,24 @@
 require 'rspec'
-require 'abstractivator/tree_visitor'
+require 'abstractivator/trees'
 require 'json'
 require 'rails'
 require 'pp'
 
-describe Abstractivator::TreeVisitor do
+describe Abstractivator::Trees do
 
-  include Abstractivator::TreeVisitor
+  include Abstractivator::Trees
 
-  describe '#transform_tree' do
+  describe '#tree_map' do
 
     context 'when no block is provided' do
       it 'raises an exception' do
-        expect{ transform_tree(hash) }.to raise_error ArgumentError, 'Must provide a transformer block'
+        expect{ tree_map(hash) }.to raise_error ArgumentError, 'Must provide a transformer block'
       end
     end
 
     it 'handles both string and symbol keys' do
       h = {:a => 1, 'b' => 2}
-      result = transform_tree(h) do |t|
+      result = tree_map(h) do |t|
         t.when('a') {|v| v + 10}
         t.when('b') {|v| v + 10}
       end
@@ -121,7 +121,7 @@ describe Abstractivator::TreeVisitor do
       it 'really does not mutate the input' do
         old = JSON.parse(File.read('assay.json'))
         old2 = old.deep_dup
-        transform_tree(old) do |t|
+        tree_map(old) do |t|
           t.when('compound_methods/calibration/normalizers[]') {|v| v.to_s.reverse}
           t.when('compound_methods/calibration/responses[]') {|v| v.to_s.reverse}
           t.when('compound_methods/rule_settings{}') {|v| v.to_s.reverse}
@@ -138,7 +138,7 @@ describe Abstractivator::TreeVisitor do
     end
 
     def transform_one_path(h, path, &block)
-      transform_tree(h) do |t|
+      tree_map(h) do |t|
         t.when(path, &block)
       end
     end

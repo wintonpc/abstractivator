@@ -1,8 +1,8 @@
 require 'active_support'
-require 'abstractivator/tree_visitor/block_collector'
+require 'abstractivator/trees/block_collector'
 
 module Abstractivator
-  module TreeVisitor
+  module Trees
 
     def recursive_delete!(hash, keys)
       x = hash # hash is named 'hash' for documentation purposes but may be anything
@@ -70,7 +70,7 @@ module Abstractivator
       path.join('/')
     end
 
-    def transform_tree(h)
+    def tree_map(h)
       raise ArgumentError.new('Must provide a transformer block') unless block_given?
       config = BlockCollector.new
       yield(config)

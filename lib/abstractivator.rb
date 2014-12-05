@@ -1,2 +1,2 @@
 require 'abstractivator/version'
-require 'abstractivator/tree_visitor'
+require 'abstractivator/trees'
