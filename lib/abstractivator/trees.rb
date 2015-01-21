@@ -1,5 +1,6 @@
 require 'active_support/core_ext/object/deep_dup'
 require 'abstractivator/trees/block_collector'
+require 'sourcify'
 
 module Abstractivator
   module Trees
@@ -25,7 +26,13 @@ module Abstractivator
         [diff(path, tree, :__absent__)]
       elsif mask.respond_to?(:call)
         comparable = mask.call(tree)
-        comparable ? [] : [diff(path, tree, mask)]
+        mask_text = :__predicate__
+        begin
+          mask_text = mask.to_source
+        rescue Exception => e
+          raise unless e.class.name.start_with?('Sourcify')
+        end
+        comparable ? [] : [diff(path, tree, mask_text)]
       else
         case mask
           when Hash
