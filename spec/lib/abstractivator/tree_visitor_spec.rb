@@ -1,5 +1,6 @@
 require 'rspec'
 require 'abstractivator/trees'
+require 'abstractivator/set_mask'
 require 'json'
 require 'rails'
 require 'pp'
@@ -118,23 +119,24 @@ describe Abstractivator::Trees do
         expect(@old['b'].equal?(@new['b'])).to be_truthy
       end
 
-      it 'really does not mutate the input' do
-        old = JSON.parse(File.read('assay.json'))
-        old2 = old.deep_dup
-        tree_map(old) do |t|
-          t.when('compound_methods/calibration/normalizers[]') {|v| v.to_s.reverse}
-          t.when('compound_methods/calibration/responses[]') {|v| v.to_s.reverse}
-          t.when('compound_methods/rule_settings{}') {|v| v.to_s.reverse}
-          t.when('compound_methods/chromatogram_methods/rule_settings{}') {|v| v.to_s.reverse}
-          t.when('compound_methods/chromatogram_methods/peak_integration/retention_time') do |ret_time|
-            if ret_time['reference_type_source'] == 'chromatogram'
-              ret_time['reference'] = ret_time['reference'].to_s.reverse
-            end
-            ret_time
-          end
-        end
-        expect(old).to eql old2
-      end
+      #TODO: create a generic json file to use for this test
+      # it 'really does not mutate the input' do
+      #   old = JSON.parse(File.read('assay.json'))
+      #   old2 = old.deep_dup
+      #   tree_map(old) do |t|
+      #     t.when('compound_methods/calibration/normalizers[]') {|v| v.to_s.reverse}
+      #     t.when('compound_methods/calibration/responses[]') {|v| v.to_s.reverse}
+      #     t.when('compound_methods/rule_settings{}') {|v| v.to_s.reverse}
+      #     t.when('compound_methods/chromatogram_methods/rule_settings{}') {|v| v.to_s.reverse}
+      #     t.when('compound_methods/chromatogram_methods/peak_integration/retention_time') do |ret_time|
+      #       if ret_time['reference_type_source'] == 'chromatogram'
+      #         ret_time['reference'] = ret_time['reference'].to_s.reverse
+      #       end
+      #       ret_time
+      #     end
+      #   end
+      #   expect(old).to eql old2
+      # end
     end
 
     def transform_one_path(h, path, &block)
@@ -169,6 +171,10 @@ describe Abstractivator::Trees do
         tree, mask, expected = values[:tree], values[:mask], values[:result]
         expect(tree_compare(tree, mask)).to eql expected
       end
+    end
+
+    def self.build_set(count)
+      (1..count).map { |num| {id: num, name: (num + 96).chr} }
     end
 
     example 'returns an empty list if the tree is comparable to the mask',
@@ -243,6 +249,29 @@ describe Abstractivator::Trees do
               result: [{path: 'c/0', tree: 2, mask: 1}]
     end
 
+    context 'when comparing sets' do
+      example 'handles empty trees',
+              tree:   {set: build_set(0)},
+              mask:   {set: Abstractivator::SetMask.new(build_set(1), ->(x) { x[:id] })},
+              result: [{path: 'set/1', tree: :__missing__, mask: Set.new(build_set(1))}]
+      example 'handles empty masks',
+              tree:   {set: build_set(1)},
+              mask:   {set: Abstractivator::SetMask.new(build_set(0), ->(x) { x[:id] })},
+              result: [{path: 'set/1', tree: build_set(1), mask: :__absent__}]
+      example 'handles out-of-order arrays',
+              tree:   {set: build_set(2).reverse},
+              mask:   {set: Abstractivator::SetMask.new(build_set(2), ->(x) { x[:id] })},
+              result: []
+      example 'can compare using a SetMask',
+              tree:   [{id: 1, name: 'a'}, {id: 2, name: 'b'}],
+              mask:   Abstractivator::SetMask.new([{id: 2, name: 'b'}, {id: 1, name: 'a'}], ->(x) { x[:id] }),
+              result: []
+
+      #TODO: add an arbitrary tail matcher for SetMask
+    end
+
+
+
     context 'handles mismatched types' do
       example 'hash for primitive',
               tree:   {a: {b: 1}},
@@ -263,6 +292,11 @@ describe Abstractivator::Trees do
               tree:   {a: 1},
               mask:   {a: [1, 2]},
               result: [{path: 'a', tree: 1, mask: [1, 2]}]
+
+      example 'primitive for set',
+              tree:   {a: 1},
+              mask:   {a: Abstractivator::SetMask.new([{x: 1}], ->(item) { item[:x] })},
+              result: [{path: 'a', tree: 1, mask: Set.new([{x: 1}])}]
     end
   end
 end
