@@ -1,6 +1,5 @@
 require 'rspec'
 require 'abstractivator/trees'
-require 'abstractivator/set_mask'
 require 'json'
 require 'rails'
 require 'pp'
@@ -166,15 +165,13 @@ describe Abstractivator::Trees do
 
   describe '#tree_compare' do
 
+    extend Abstractivator::Trees
+
     def self.example(description, values)
       it description do
         tree, mask, expected = values[:tree], values[:mask], values[:result]
         expect(tree_compare(tree, mask)).to eql expected
       end
-    end
-
-    def self.build_set(count)
-      (1..count).map { |num| {id: num, name: (num + 96).chr} }
     end
 
     example 'returns an empty list if the tree is comparable to the mask',
@@ -233,12 +230,12 @@ describe Abstractivator::Trees do
             result: []
 
     context 'when comparing arrays' do
-      example 'handles the tree being shorter',
+      example 'reports the tree being shorter',
               tree:   {a: [1]},
               mask:   {a: [1, 2]},
               result: [{path: 'a/1', tree: :__missing__, mask: [2]}]
 
-      example 'handles the mask being shorter',
+      example 'reports the mask being shorter',
               tree:   {a: [1, 2]},
               mask:   {a: [1]},
               result: [{path: 'a/1', tree: [2], mask: :__absent__}]
@@ -250,29 +247,50 @@ describe Abstractivator::Trees do
     end
 
     context 'when comparing sets' do
-      example 'handles empty trees',
-              tree:   {set: build_set(0)},
-              mask:   {set: Abstractivator::SetMask.new(build_set(1), ->(x) { x[:id] })},
-              result: [{path: 'set/1', tree: :__missing__, mask: Set.new(build_set(1))}]
-      example 'handles empty masks',
-              tree:   {set: build_set(1)},
-              mask:   {set: Abstractivator::SetMask.new(build_set(0), ->(x) { x[:id] })},
-              result: [{path: 'set/1', tree: build_set(1), mask: :__absent__}]
-      example 'handles out-of-order arrays',
-              tree:   {set: build_set(2).reverse},
-              mask:   {set: Abstractivator::SetMask.new(build_set(2), ->(x) { x[:id] })},
-              result: []
-      example 'can compare using a SetMask',
-              tree:   [{id: 1, name: 'a'}, {id: 2, name: 'b'}],
-              mask:   Abstractivator::SetMask.new([{id: 2, name: 'b'}, {id: 1, name: 'a'}], ->(x) { x[:id] }),
+
+      def self.get_name
+        ->(x){ x[:name] }
+      end
+
+      example 'allows out-of-order arrays',
+              tree:   {set: [{id: 2, name: 'b'}, {id: 1, name: 'a'}]},
+              mask:   {set: set_mask([{id: 1, name: 'a'}, {id: 2, name: 'b'}], get_name)},
               result: []
 
-      #TODO: add an arbitrary tail matcher for SetMask
+      example 'reports missing set attribute in the tree',
+              tree:   {},
+              mask:   {set: set_mask([{id: 1, name: 'a'}], get_name)},
+              result: [{path: 'set', tree: :__missing__, mask: [{id: 1, name: 'a'}]}]
+
+      example 'reports missing items in the tree',
+              tree:   {set: []},
+              mask:   {set: set_mask([{id: 1, name: 'a'}], get_name)},
+              result: [{path: 'set/a', tree: :__missing__, mask: {id: 1, name: 'a'}}]
+
+      example 'reports extra items in the tree',
+              tree:   {set: [{id: 1, name: 'a'}]},
+              mask:   {set: set_mask([], get_name)},
+              result: [{path: 'set/a', tree: {id: 1, name: 'a'}, mask: :__absent__}]
+
+      example 'reports duplicate keys in the tree',
+              tree:   {set: [{id: 1, name: 'a'}, {id: 2, name: 'a'}]},
+              mask:   {set: set_mask([:*], get_name)},
+              result: [{path: 'set', tree: [:__duplicate_keys__, ['a']], mask: nil}]
+
+      example 'reports duplicate keys in the mask',
+              tree:   {set: [{id: 1, name: 'a'}]},
+              mask:   {set: set_mask([{id: 1, name: 'a'}, {id: 2, name: 'a'}], get_name)},
+              result: [{path: 'set', tree: nil, mask: [:__duplicate_keys__, ['a']]}]
+
+      example 'can test for only a subset',
+              tree:   {set: [{id: 1, name: 'a'}, {id: 2, name: 'b'}]},
+              mask:   {set: set_mask([{id: 2, name: 'b'}, :*], get_name)},
+              result: []
     end
 
 
 
-    context 'handles mismatched types' do
+    context 'reports mismatched types' do
       example 'hash for primitive',
               tree:   {a: {b: 1}},
               mask:   {a: 1},
@@ -294,9 +312,9 @@ describe Abstractivator::Trees do
               result: [{path: 'a', tree: 1, mask: [1, 2]}]
 
       example 'primitive for set',
-              tree:   {a: 1},
-              mask:   {a: Abstractivator::SetMask.new([{x: 1}], ->(item) { item[:x] })},
-              result: [{path: 'a', tree: 1, mask: Set.new([{x: 1}])}]
+              tree:   {set: 1},
+              mask:   {set: set_mask([{x: 1}], ->(item) { item[:x] })},
+              result: [{path: 'set', tree: 1, mask: [{x: 1}]}]
     end
   end
 end
