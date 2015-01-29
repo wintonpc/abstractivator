@@ -59,6 +59,22 @@ module Abstractivator
             else
               [diff(path, tree, mask)]
             end
+          when SetMask
+            if tree.is_a? Enumerable
+              if !tree.any? && !mask.any?
+                []
+              elsif !tree.any?
+                [diff(push_path(path, mask.get_key(mask.first)), :__missing__, mask.to_set)]
+              elsif !mask.any?
+                [diff(push_path(path, mask.get_key(tree.first)), tree, :__absent__)]
+              else
+                key = mask.get_key(tree.first)
+                tree_compare(tree.first, mask[key], push_path(path, key)) +
+                    tree_compare(tree.drop(1), mask.drop(key), path)
+              end
+            else
+              [diff(path, tree, mask.to_set)]
+            end
           else
             tree == mask ? [] : [diff(path, tree, mask)]
         end
