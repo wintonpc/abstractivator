@@ -33,9 +33,7 @@ module Abstractivator
               [diff(path, tree, mask)]
             end
           when SetMask # must check this before Enumerable because Structs are enumerable
-            if !tree.is_a?(Enumerable)
-              [diff(path, tree, mask.items)]
-            else
+            if tree.is_a?(Enumerable)
               # convert the enumerables to hashes, then compare those hashes
               tree_items = tree
               mask_items = mask.items.dup
@@ -60,6 +58,8 @@ module Abstractivator
               else # compare as hashes
                 tree_compare(new_tree, new_mask, path, index)
               end
+            else
+              [diff(path, tree, mask.items)]
             end
           when Enumerable
             if tree.is_a?(Enumerable)
