@@ -37,18 +37,22 @@ module Abstractivator
               [diff(path, tree, mask.items)]
             else
               # convert the enumerables to hashes, then compare those hashes
-              be_strict = !mask.items.delete(:*)
-              new_tree = hashify_set(tree, mask.get_key)
-              new_mask = hashify_set(mask.items, mask.get_key)
+              tree_items = tree
+              mask_items = mask.items.dup
+              get_key = mask.get_key
+
+              be_strict = !mask_items.delete(:*)
+              new_tree = hashify_set(tree_items, get_key)
+              new_mask = hashify_set(mask_items, get_key)
               tree_keys = Set.new(new_tree.keys)
               mask_keys = Set.new(new_mask.keys)
               tree_only = tree_keys - mask_keys
 
               # report duplicate keys
-              if new_tree.size < tree.size
-                diff(path, [:__duplicate_keys__, duplicates(tree.map(&mask.get_key))], nil)
-              elsif new_mask.size < mask.items.size
-                diff(path, nil, [:__duplicate_keys__, duplicates(mask.items.map(&mask.get_key))])
+              if new_tree.size < tree_items.size
+                diff(path, [:__duplicate_keys__, duplicates(tree_items.map(&get_key))], nil)
+              elsif new_mask.size < mask_items.size
+                diff(path, nil, [:__duplicate_keys__, duplicates(mask_items.map(&get_key))])
               # hash comparison allows extra values in the tree.
               # report extra values in the tree unless there was a :* in the mask
               elsif be_strict && tree_only.any?
