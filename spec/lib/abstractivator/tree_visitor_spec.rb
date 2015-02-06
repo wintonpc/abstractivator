@@ -118,23 +118,24 @@ describe Abstractivator::Trees do
         expect(@old['b'].equal?(@new['b'])).to be_truthy
       end
 
-      it 'really does not mutate the input' do
-        old = JSON.parse(File.read('assay.json'))
-        old2 = old.deep_dup
-        tree_map(old) do |t|
-          t.when('compound_methods/calibration/normalizers[]') {|v| v.to_s.reverse}
-          t.when('compound_methods/calibration/responses[]') {|v| v.to_s.reverse}
-          t.when('compound_methods/rule_settings{}') {|v| v.to_s.reverse}
-          t.when('compound_methods/chromatogram_methods/rule_settings{}') {|v| v.to_s.reverse}
-          t.when('compound_methods/chromatogram_methods/peak_integration/retention_time') do |ret_time|
-            if ret_time['reference_type_source'] == 'chromatogram'
-              ret_time['reference'] = ret_time['reference'].to_s.reverse
-            end
-            ret_time
-          end
-        end
-        expect(old).to eql old2
-      end
+      #TODO: create a generic json file to use for this test
+      # it 'really does not mutate the input' do
+      #   old = JSON.parse(File.read('assay.json'))
+      #   old2 = old.deep_dup
+      #   tree_map(old) do |t|
+      #     t.when('compound_methods/calibration/normalizers[]') {|v| v.to_s.reverse}
+      #     t.when('compound_methods/calibration/responses[]') {|v| v.to_s.reverse}
+      #     t.when('compound_methods/rule_settings{}') {|v| v.to_s.reverse}
+      #     t.when('compound_methods/chromatogram_methods/rule_settings{}') {|v| v.to_s.reverse}
+      #     t.when('compound_methods/chromatogram_methods/peak_integration/retention_time') do |ret_time|
+      #       if ret_time['reference_type_source'] == 'chromatogram'
+      #         ret_time['reference'] = ret_time['reference'].to_s.reverse
+      #       end
+      #       ret_time
+      #     end
+      #   end
+      #   expect(old).to eql old2
+      # end
     end
 
     def transform_one_path(h, path, &block)
@@ -163,6 +164,8 @@ describe Abstractivator::Trees do
   end
 
   describe '#tree_compare' do
+
+    extend Abstractivator::Trees
 
     def self.example(description, values)
       it description do
@@ -227,12 +230,12 @@ describe Abstractivator::Trees do
             result: []
 
     context 'when comparing arrays' do
-      example 'handles the tree being shorter',
+      example 'reports the tree being shorter',
               tree:   {a: [1]},
               mask:   {a: [1, 2]},
               result: [{path: 'a/1', tree: :__missing__, mask: [2]}]
 
-      example 'handles the mask being shorter',
+      example 'reports the mask being shorter',
               tree:   {a: [1, 2]},
               mask:   {a: [1]},
               result: [{path: 'a/1', tree: [2], mask: :__absent__}]
@@ -243,7 +246,51 @@ describe Abstractivator::Trees do
               result: [{path: 'c/0', tree: 2, mask: 1}]
     end
 
-    context 'handles mismatched types' do
+    context 'when comparing sets' do
+
+      def self.get_name
+        ->(x){ x[:name] }
+      end
+
+      example 'allows out-of-order arrays',
+              tree:   {set: [{id: 2, name: 'b'}, {id: 1, name: 'a'}]},
+              mask:   {set: set_mask([{id: 1, name: 'a'}, {id: 2, name: 'b'}], get_name)},
+              result: []
+
+      example 'reports missing set attribute in the tree',
+              tree:   {},
+              mask:   {set: set_mask([{id: 1, name: 'a'}], get_name)},
+              result: [{path: 'set', tree: :__missing__, mask: [{id: 1, name: 'a'}]}]
+
+      example 'reports missing items in the tree',
+              tree:   {set: []},
+              mask:   {set: set_mask([{id: 1, name: 'a'}], get_name)},
+              result: [{path: 'set/a', tree: :__missing__, mask: {id: 1, name: 'a'}}]
+
+      example 'reports extra items in the tree',
+              tree:   {set: [{id: 1, name: 'a'}]},
+              mask:   {set: set_mask([], get_name)},
+              result: [{path: 'set/a', tree: {id: 1, name: 'a'}, mask: :__absent__}]
+
+      example 'reports duplicate keys in the tree',
+              tree:   {set: [{id: 1, name: 'a'}, {id: 2, name: 'a'}]},
+              mask:   {set: set_mask([:*], get_name)},
+              result: [{path: 'set', tree: [:__duplicate_keys__, ['a']], mask: nil}]
+
+      example 'reports duplicate keys in the mask',
+              tree:   {set: [{id: 1, name: 'a'}]},
+              mask:   {set: set_mask([{id: 1, name: 'a'}, {id: 2, name: 'a'}], get_name)},
+              result: [{path: 'set', tree: nil, mask: [:__duplicate_keys__, ['a']]}]
+
+      example 'can test for only a subset',
+              tree:   {set: [{id: 1, name: 'a'}, {id: 2, name: 'b'}]},
+              mask:   {set: set_mask([{id: 2, name: 'b'}, :*], get_name)},
+              result: []
+    end
+
+
+
+    context 'reports mismatched types' do
       example 'hash for primitive',
               tree:   {a: {b: 1}},
               mask:   {a: 1},
@@ -263,6 +310,11 @@ describe Abstractivator::Trees do
               tree:   {a: 1},
               mask:   {a: [1, 2]},
               result: [{path: 'a', tree: 1, mask: [1, 2]}]
+
+      example 'primitive for set',
+              tree:   {set: 1},
+              mask:   {set: set_mask([{x: 1}], ->(item) { item[:x] })},
+              result: [{path: 'set', tree: 1, mask: [{x: 1}]}]
     end
   end
 end
