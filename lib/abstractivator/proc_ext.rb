@@ -1,3 +1,5 @@
+require 'abstractivator/enumerable_ext'
+
 module MethodAndProcExtensions
   def loosen_args
     proc do |*args, &block|
@@ -14,7 +16,7 @@ class Proc
   end
 
   def self.compose(*procs)
-    procs.inject_right(identity) { |inner, p| p.compose(inner) }
+    procs.map(&:to_proc).inject_right(identity) { |inner, p| p.compose(inner) }
   end
 
   def self.identity

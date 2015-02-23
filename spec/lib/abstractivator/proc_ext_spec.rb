@@ -19,6 +19,10 @@ context 'in the world of functional programming' do
       expect(Proc.compose(square, double).call(3)).to eql 36
       expect(Proc.compose(negate, square, double).call(3)).to eql -36
     end
+    it 'coerces the args to a proc with to_proc' do
+      p = Proc.compose(:abs, :first)
+      expect(p.call([-5, 6])).to eql 5
+    end
   end
 
   describe 'Proc#reverse_args' do
