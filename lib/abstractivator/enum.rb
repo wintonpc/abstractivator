@@ -21,6 +21,10 @@ module Enum
       safe_constantize("#{self.name}::#{sym.to_s.upcase}")
     end
 
+    def from(x)
+      values.find{|v| v == x}
+    end
+
     private
 
     def safe_constantize(str)

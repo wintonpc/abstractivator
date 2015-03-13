@@ -34,6 +34,14 @@ describe Enum do
       expect{Container::Traditional.from_symbol(:baz)}.to raise_error
     end
   end
+  describe '::from' do
+    it 'returns the typed version of the value' do
+      x = 'apple'
+      expect(x.enum_type).to be_nil
+      result = Container::Fruits.from(x)
+      expect(result.enum_type).to eql Container::Fruits
+    end
+  end
 end
 
 describe '#define_enum' do
