@@ -47,7 +47,7 @@ module Enumerable
     x.respond_to?(:call)
   end
 
-  def hash_map(get_key, &get_value)
+  def hash_map(get_key=->x{x}, &get_value)
     Hash[self.map{|x| [get_key.(x), get_value ? get_value.(x) : x]}]
   end
 
@@ -90,5 +90,15 @@ module Enumerable
   def pad_right(n, value=nil, &block)
     block ||= proc { value }
     self + ([n-self.size, 0].max).times.map(&block)
+  end
+
+  def stable_sort(&compare)
+    compare = compare || ->(a, b){a <=> b}
+    xis = self.each_with_index.map{|x, i| [x, i]}
+    sorted = xis.sort do |(a, ai), (b, bi)|
+      primary = compare.call(a, b)
+      primary != 0 ? primary : (ai <=> bi)
+    end
+    sorted.map(&:first)
   end
 end
