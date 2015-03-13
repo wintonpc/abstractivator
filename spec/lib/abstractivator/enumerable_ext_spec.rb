@@ -141,4 +141,24 @@ describe Enumerable do
       expect(result).to eql [:x, 1, 2, 3]
     end
   end
+
+  describe '#hash_map' do
+    let!(:xs) { [Object, Hash, Array] }
+    it 'turns an array into a map' do
+      result = xs.hash_map(proc{|x| x.to_s[0]}) {|x| x.to_s }
+      expect(result).to eql({ 'O' => 'Object', 'H' => 'Hash', 'A' => 'Array' })
+    end
+    it 'the value transformer can be omitted' do
+      result = xs.hash_map(proc{|x| x.to_s[0]})
+      expect(result).to eql({ 'O' => Object, 'H' => Hash, 'A' => Array })
+    end
+    it 'the key transformer can be omitted' do
+      result = xs.hash_map(&:to_s)
+      expect(result).to eql({ Object => 'Object', Hash => 'Hash', Array => 'Array' })
+    end
+    it 'the key transformer is called loosely' do
+      result = xs.hash_map(:to_s)
+      expect(result).to eql({ 'Object' => Object, 'Hash' => Hash, 'Array' => Array })
+    end
+  end
 end

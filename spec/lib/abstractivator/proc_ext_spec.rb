@@ -34,7 +34,10 @@ context 'in the world of functional programming' do
 
   describe 'Proc::loose_call' do
     it 'returns the first argument if it is not a proc' do
-      expect(Proc.loose_call(:a, [:b, :c])).to eql :a
+      expect(Proc.loose_call('a', ['b', 'c'])).to eql 'a'
+    end
+    it 'attempts to convert the first argument to proc' do
+      expect(Proc.loose_call(:to_s, ['5'])).to eql '5'
     end
     it 'calls the proc with an appropriate number of arguments' do
       events = []
@@ -47,6 +50,9 @@ context 'in the world of functional programming' do
     end
     it 'pads with nils' do
       expect(Proc.loose_call(->(a, b) {[a, b]}, [1])).to eql [1, nil]
+    end
+    it 'works with variable-arity procs' do
+      expect(Proc.loose_call(->(*args) {args}, [1, 2])).to eql [1, 2]
     end
   end
 

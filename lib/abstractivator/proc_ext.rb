@@ -30,7 +30,10 @@ class Proc
   end
 
   def self.loose_call(x, args, &block)
-    x.respond_to?(:call) ? x.call(*args.take(x.arity).pad_right(x.arity), &block) : x
+    x = x.to_proc if x.respond_to?(:to_proc)
+    x.respond_to?(:call) or return x
+    args = args.take(x.arity).pad_right(x.arity) if x.arity >= 0
+    x.call(*args, &block)
   end
 end
 
