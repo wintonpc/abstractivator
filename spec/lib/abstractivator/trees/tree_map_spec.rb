@@ -107,6 +107,16 @@ describe Abstractivator::Trees do
         result = transform_one_path(h, 'a[]') {|v| v + 1}
         expect(result).to eql({'a' => nil})
       end
+      it 'passes the index as the second argument' do
+        h = {a: %w(one two)}
+        call_count = 0
+        transform_one_path(h, 'a[]') do |v, i|
+          expect(i).to eql 0 if v == 'one'
+          expect(i).to eql 1 if v == 'two'
+          call_count += 1
+        end
+        expect(call_count).to eql 2
+      end
     end
 
     context 'when replacing hash members' do
@@ -114,6 +124,16 @@ describe Abstractivator::Trees do
         h = {'a' => nil}
         result = transform_one_path(h, 'a{}') {|v| v + 1}
         expect(result).to eql({'a' => nil})
+      end
+      it 'passes the key as the second argument' do
+        h = {a: {b: 1, c: 2}}
+        call_count = 0
+        transform_one_path(h, 'a{}') do |v, k|
+          expect(k).to eql :b if v == 1
+          expect(k).to eql :c if v == 2
+          call_count += 1
+        end
+        expect(call_count).to eql 2
       end
     end
 

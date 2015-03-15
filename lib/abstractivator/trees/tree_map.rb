@@ -44,7 +44,7 @@ module Abstractivator
               hash_name, old_fh = get_key_and_value(h, hash_name)
               unless old_fh == @no_value || old_fh.nil?
                 h[hash_name] = old_fh.each_with_object(old_fh.dup) do |(key, value), fh|
-                  replacement = path_tree.call(value.deep_dup)
+                  replacement = path_tree.call(value.deep_dup, key)
                   if deleted?(replacement)
                     fh.delete(key)
                   else
@@ -55,7 +55,7 @@ module Abstractivator
             elsif array_name = try_get_array_name(name)
               array_name, value = get_key_and_value(h, array_name)
               unless value == @no_value || value.nil?
-                h[array_name] = value.map(&:deep_dup).map(&path_tree).reject(&method(:deleted?))
+                h[array_name] = value.map(&:deep_dup).each_with_index.map(&path_tree).reject(&method(:deleted?))
               end
             else
               name, value = get_key_and_value(h, name)
