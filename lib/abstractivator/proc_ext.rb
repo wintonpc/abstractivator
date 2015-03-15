@@ -31,7 +31,7 @@ class Proc
 
   def self.loose_call(x, args, &block)
     x = x.to_proc if x.respond_to?(:to_proc)
-    x.respond_to?(:call) or return x
+    x.callable? or return x
     args = args.take(x.arity).pad_right(x.arity) if x.arity >= 0
     x.call(*args, &block)
   end
@@ -53,5 +53,11 @@ class Array
   def to_proc
     raise 'size must be exactly one' unless size == 1
     proc{|x| x[first]}
+  end
+end
+
+class Object
+  def callable?
+    respond_to?(:call)
   end
 end

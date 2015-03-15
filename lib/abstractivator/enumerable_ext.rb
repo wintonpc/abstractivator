@@ -41,7 +41,7 @@ module Enumerable
   end
 
   def self.get_default(default, other_side_value)
-    proc?(default) ? default.(other_side_value) : default
+    default.callable? ? default.call(other_side_value) : default
   end
 
   def self.proc?(x)
@@ -73,7 +73,7 @@ module Enumerable
   define_method :detect do |*args, &block|
     detect = orig_detect.bind(self)
 
-    if args.size == 1 && !args.first.respond_to?(:call) && block
+    if args.size == 1 && !args.first.callable? && block
       value = args.first
       detect.call {|x| block.call(x) == value}
     elsif args.size == 2 && !block

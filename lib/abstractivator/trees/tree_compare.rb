@@ -1,5 +1,6 @@
 require 'active_support/core_ext/object/deep_dup'
 require 'abstractivator/trees/block_collector'
+require 'abstractivator/proc_ext'
 require 'sourcify'
 require 'delegate'
 require 'set'
@@ -19,7 +20,7 @@ module Abstractivator
         []
       elsif mask == :- && tree != :__missing__
         [diff(path, tree, :__absent__)]
-      elsif mask.respond_to?(:call)
+      elsif mask.callable?
         are_equivalent = mask.call(tree)
         are_equivalent ? [] : [diff(path, tree, mask)]
       else
@@ -109,7 +110,7 @@ module Abstractivator
     end
 
     def massage_mask_for_diff(mask)
-      if mask.respond_to?(:call)
+      if mask.callable?
         massaged = :__predicate__
         begin
           massaged = mask.to_source

@@ -84,3 +84,11 @@ describe 'Array#to_proc' do
     expect{[:a, :b].to_proc}.to raise_error 'size must be exactly one'
   end
 end
+
+describe 'Object#callable?' do
+  it 'determines whether or not the object has a public :call method' do
+    expect(1.callable?).to be_falsey
+    expect(proc{}).to be_truthy
+    expect(double(call: 1)).to be_truthy
+  end
+end

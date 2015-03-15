@@ -79,7 +79,7 @@ module Abstractivator
       end
 
       def leaf?(path_tree)
-        path_tree.respond_to?(:call)
+        path_tree.callable?
       end
 
       def deleted?(value)
