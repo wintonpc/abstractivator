@@ -101,6 +101,15 @@ describe Abstractivator::Trees do
       end
     end
 
+    it 'it does not add missing keys' do # regression test
+      result = tree_map({}) do |t|
+        t.when('foo') { |x| x }
+        t.when('bars[]') { |x| x }
+        t.when('others/baz') { |x| x }
+      end
+      expect(result).to eql({})
+    end
+
     context 'mutation' do
       before(:each) do
         @old = {'a' => {'x' => 1, 'y' => 2}, 'b' => {'x' => 17, 'y' => 23}}
