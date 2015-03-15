@@ -117,6 +117,10 @@ describe Abstractivator::Trees do
         end
         expect(call_count).to eql 2
       end
+      it 'raises an error is the value is not an array' do
+        expect{transform_one_path({a: 1}, 'a[]') { |x| x }}.to raise_error 'Expected an array but got Fixnum: 1'
+        expect{transform_one_path({a: {b: 1}}, 'a[]') { |x| x }}.to raise_error 'Expected an array but got Hash: {:b=>1}'
+      end
     end
 
     context 'when replacing hash members' do
@@ -134,6 +138,10 @@ describe Abstractivator::Trees do
           call_count += 1
         end
         expect(call_count).to eql 2
+      end
+      it 'raises an error is the value is not a hash' do
+        expect{transform_one_path({a: 1}, 'a{}') { |x| x }}.to raise_error 'Expected a hash but got Fixnum: 1'
+        expect{transform_one_path({a: [1, 2]}, 'a{}') { |x| x }}.to raise_error 'Expected a hash but got Array: [1, 2]'
       end
     end
 

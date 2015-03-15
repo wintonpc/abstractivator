@@ -43,6 +43,7 @@ module Abstractivator
             if hash_name = try_get_hash_name(name)
               hash_name, old_fh = get_key_and_value(h, hash_name)
               unless old_fh == @no_value || old_fh.nil?
+                old_fh.is_a?(Hash) or raise "Expected a hash but got #{old_fh.class.name}: #{old_fh.inspect}"
                 h[hash_name] = old_fh.each_with_object(old_fh.dup) do |(key, value), fh|
                   replacement = path_tree.call(value.deep_dup, key)
                   if deleted?(replacement)
@@ -55,6 +56,7 @@ module Abstractivator
             elsif array_name = try_get_array_name(name)
               array_name, value = get_key_and_value(h, array_name)
               unless value == @no_value || value.nil?
+                value.is_a?(Array) or raise "Expected an array but got #{value.class.name}: #{value.inspect}"
                 h[array_name] = value.map(&:deep_dup).each_with_index.map(&path_tree).reject(&method(:deleted?))
               end
             else
