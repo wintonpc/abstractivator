@@ -85,6 +85,22 @@ describe Abstractivator::Trees do
       expect(result).to eql({'a' => [[3,2,1], [6,5,4]]})
     end
 
+    it 'deletes values' do
+      h = {
+          a: 1,
+          b: [4, 5, 6],
+          c: { d: 9, e: 10 },
+          f: { g: 101, h: 102, i: 103 }
+      }
+      result = tree_map(h) do |t|
+        t.when('a') { t.delete }
+        t.when('c/d') { t.delete }
+        t.when('b[]') { |x| x.even? ? t.delete : x }
+        t.when('f{}') { |x| x.even? ? t.delete : x }
+      end
+      expect(result).to eql({b: [5], c: {e: 10}, f: {g: 101, i: 103}})
+    end
+
     context 'when replacing array members' do
       it 'allows the array to be nil' do
         h = {'a' => nil}

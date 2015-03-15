@@ -18,6 +18,10 @@ module Abstractivator
         path_tree
       end
 
+      def delete
+        @delete ||= Object.new
+      end
+
       private
 
       def set_hash_path(h, names, block)

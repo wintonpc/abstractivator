@@ -16,11 +16,12 @@ module Abstractivator
       raise ArgumentError.new('Must provide a transformer block') unless block_given?
       config = BlockCollector.new
       yield(config)
-      TransformTreeClosure.new.do_obj(h, config.get_path_tree)
+      TransformTreeClosure.new(config).do_obj(h, config.get_path_tree)
     end
 
     class TransformTreeClosure
-      def initialize
+      def initialize(config)
+        @config = config
         @bias = 0 # symbol = +, string = -
         @no_value = Object.new
       end
@@ -43,15 +44,29 @@ module Abstractivator
               hash_name, old_fh = get_key_and_value(h, hash_name)
               unless old_fh == @no_value || old_fh.nil?
                 h[hash_name] = old_fh.each_with_object(old_fh.dup) do |(key, value), fh|
-                  fh[key] = path_tree.call(value.deep_dup)
+                  replacement = path_tree.call(value.deep_dup)
+                  if deleted?(replacement)
+                    fh.delete(key)
+                  else
+                    fh[key] = replacement
+                  end
                 end
               end
             elsif array_name = try_get_array_name(name)
               array_name, value = get_key_and_value(h, array_name)
-              h[array_name] = value.map(&:deep_dup).map(&path_tree) unless value == @no_value || value.nil?
+              unless value == @no_value || value.nil?
+                h[array_name] = value.map(&:deep_dup).map(&path_tree).reject(&method(:deleted?))
+              end
             else
               name, value = get_key_and_value(h, name)
-              h[name] = path_tree.call(value.deep_dup) unless value == @no_value
+              unless value == @no_value
+                replacement = path_tree.call(value.deep_dup)
+                if deleted?(replacement)
+                  h.delete(name)
+                else
+                  h[name] = replacement
+                end
+              end
             end
           else # not leaf
             name, value = get_key_and_value(h, name)
@@ -63,6 +78,10 @@ module Abstractivator
 
       def leaf?(path_tree)
         path_tree.respond_to?(:call)
+      end
+
+      def deleted?(value)
+        value == @config.delete
       end
 
       def get_key_and_value(h, string_key)
