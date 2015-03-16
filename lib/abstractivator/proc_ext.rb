@@ -25,6 +25,20 @@ class Proc
     procs.map(&:to_proc).inject_right(identity) { |inner, p| p.compose(inner) }
   end
 
+  # composes procedures in reverse order.
+  # useful for applying a series of transformations.
+  # pipe(f, g, h) returns the procedure
+  # proc { |x| h.call(g.call(f.call(x))) }
+  def self.pipe(*procs)
+    Proc.compose(*procs.reverse)
+  end
+
+  # makes a pipeline transform as with Proc::pipe
+  # and applies it to the given value.
+  def self.pipe_value(value, *procs)
+    Proc.pipe(*procs).call(value)
+  end
+
   # returns the identity function
   def self.identity
     proc {|x| x}

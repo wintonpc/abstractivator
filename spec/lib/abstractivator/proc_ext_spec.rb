@@ -25,6 +25,25 @@ context 'in the world of functional programming' do
     end
   end
 
+  describe 'Proc::pipe' do
+    it 'composes procs in reverse order' do
+      expect(Proc.pipe.call(3)).to eql 3
+      expect(Proc.pipe(double).call(3)).to eql 6
+      expect(Proc.pipe(double, square).call(3)).to eql 36
+      expect(Proc.pipe(double, square, negate).call(3)).to eql -36
+    end
+    it 'coerces the args to a proc with to_proc' do
+      p = Proc.pipe(:first, :abs)
+      expect(p.call([-5, 6])).to eql 5
+    end
+  end
+
+  describe 'Proc::pipe_value' do
+    it 'makes a Proc::pipe pipeline and applies it to a value' do
+      expect(Proc.pipe_value(3, double, square, negate)).to eql -36
+    end
+  end
+
   describe 'Proc#reverse_args' do
     it 'reverse argument order' do
       divide = proc {|a, b| a / b}
