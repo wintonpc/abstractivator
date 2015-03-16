@@ -6,6 +6,7 @@ require 'set'
 
 module Abstractivator
   module Trees
+    # recursively deletes the specified keys
     def recursive_delete!(hash, keys)
       x = hash # hash is named 'hash' for documentation purposes but may be anything
       case x

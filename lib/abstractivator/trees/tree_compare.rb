@@ -13,6 +13,9 @@ module Abstractivator
       SetMask.new(items, get_key)
     end
 
+    # Compares a tree to a mask.
+    # Returns a diff of where the tree differs from the mask.
+    # Ignores parts of the tree not specified in the mask.
     def tree_compare(tree, mask, path=[], index=nil)
       if mask == [:*] && tree.is_a?(Enumerable)
         []
