@@ -8,6 +8,8 @@ module Enum
     # base.extend Dsl
   end
 
+  module Value; end # used to mark enum values
+
   module ClassMethods
     def values
       self.constants.map{|sym| self.const_get(sym)}.reject{|x| x.is_a?(Class) || x.is_a?(Module)}
@@ -22,7 +24,11 @@ module Enum
     end
 
     def from(x)
-      values.find{|v| v.value == x}
+      if x.is_a?(Enum::Value)
+        x
+      else
+        values.find{|v| v.value == x}
+      end
     end
 
     private
@@ -53,6 +59,7 @@ def make_enum(*fields)
       value_class =
           const_set(:Value,
                     Class.new do
+                      include Enum::Value
                       attr_reader :enum_type, :value
                       define_method(:initialize) do |enum_type, value|
                         @enum_type, @value = enum_type, value

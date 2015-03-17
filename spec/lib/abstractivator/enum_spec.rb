@@ -42,6 +42,9 @@ describe Enum do
       result = Container::Fruits.from(x)
       expect(result).to eql Container::Fruits::APPLE
     end
+    it 'works if the value is already typed' do
+      expect(Container::Fruits.from(Container::Fruits::APPLE)).to eql Container::Fruits::APPLE
+    end
   end
 end
 
