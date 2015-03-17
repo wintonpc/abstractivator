@@ -12,6 +12,8 @@ class Container
   define_enum(:Vegetables, cucumber: 'Cucumis sativus', eggplant: 8)
 end
 
+define_enum(:Meats, :bacon, :more_bacon)
+
 describe Enum do
   describe '::values' do
     it 'enumerates the values' do
@@ -58,6 +60,9 @@ describe '#define_enum' do
     expect(Container::Fruits::ORANGE.enum_type).to eql Container::Fruits
     expect(Container::Vegetables::CUCUMBER.enum_type).to eql Container::Vegetables
     expect(Container::Vegetables::EGGPLANT.enum_type).to eql Container::Vegetables
+  end
+  it 'can define top level enumerations' do
+    expect(Meats.values).to eql %w(bacon more_bacon)
   end
   it 'raises an error when called with bad arguments' do
     expect{define_enum(:Stuff, 5)}.to raise_error /Arguments must be/

@@ -55,7 +55,11 @@ class WrappedEnumValue < SimpleDelegator
 end
 
 def define_enum(name, *fields)
-  const_set(name, make_enum(*fields))
+  if respond_to?(:const_set)
+    const_set(name, make_enum(*fields))
+  else # top-level
+    Kernel.send(:const_set, name, make_enum(*fields))
+  end
 end
 
 def make_enum(*fields)
