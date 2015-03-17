@@ -39,21 +39,20 @@ describe Enum do
   describe '::from' do
     it 'returns the typed version of the value' do
       x = 'apple'
-      expect(x.enum_type).to be_nil
       result = Container::Fruits.from(x)
-      expect(result.enum_type).to eql Container::Fruits
+      expect(result).to eql Container::Fruits::APPLE
     end
   end
 end
 
 describe '#define_enum' do
   it 'defines an enum given an array of symbols' do
-    expect(Container::Fruits::APPLE).to eql 'apple'
-    expect(Container::Fruits::ORANGE).to eql 'orange'
+    expect(Container::Fruits::APPLE.value).to eql 'apple'
+    expect(Container::Fruits::ORANGE.value).to eql 'orange'
   end
   it 'defines an enum given a hash' do
-    expect(Container::Vegetables::CUCUMBER).to eql 'Cucumis sativus'
-    expect(Container::Vegetables::EGGPLANT).to eql 8
+    expect(Container::Vegetables::CUCUMBER.value).to eql 'Cucumis sativus'
+    expect(Container::Vegetables::EGGPLANT.value).to eql 8
   end
   it 'values know their parent' do
     expect(Container::Fruits::APPLE.enum_type).to eql Container::Fruits
@@ -62,7 +61,7 @@ describe '#define_enum' do
     expect(Container::Vegetables::EGGPLANT.enum_type).to eql Container::Vegetables
   end
   it 'can define top level enumerations' do
-    expect(Meats.values).to eql %w(bacon more_bacon)
+    expect(Meats.values.map(&:value)).to eql %w(bacon more_bacon)
   end
   it 'raises an error when called with bad arguments' do
     expect{define_enum(:Stuff, 5)}.to raise_error /Arguments must be/

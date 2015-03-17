@@ -10,7 +10,7 @@ module Enum
 
   module ClassMethods
     def values
-      self.constants.map{|sym| self.const_get(sym)}.reject{|x| x == Enum::ClassMethods}
+      self.constants.map{|sym| self.const_get(sym)}.reject{|x| x.is_a?(Class) || x.is_a?(Module)}
     end
 
     def name_for(value)
@@ -22,7 +22,7 @@ module Enum
     end
 
     def from(x)
-      values.find{|v| v == x}
+      values.find{|v| v.value == x}
     end
 
     private
@@ -34,23 +34,6 @@ module Enum
         fail "'#{str}' has not been defined as a constant"
       end
     end
-  end
-end
-
-module EnumMember
-  attr_accessor :enum_type
-end
-
-class Object
-  include EnumMember
-end
-
-class WrappedEnumValue < SimpleDelegator
-  include EnumMember
-  attr_reader :class # pure evil
-  def initialize(value)
-    __setobj__(value)
-    @class = value.class
   end
 end
 
@@ -67,9 +50,20 @@ def make_enum(*fields)
     fields = fields.first
     Module.new do
       include Enum
+      value_class =
+          const_set(:Value,
+                    Class.new do
+                      attr_reader :enum_type, :value
+                      define_method(:initialize) do |enum_type, value|
+                        @enum_type, @value = enum_type, value
+                      end
+                      define_method(:inspect) do
+                        "#<#{self.class.name} #{value.inspect}>"
+                      end
+                      alias_method :to_s, :inspect
+                    end)
       fields.each_pair do |k, v|
-        val = v.frozen? ? WrappedEnumValue.new(v) : v
-        val.enum_type = self
+        val = value_class.new(self, v)
         fld = k.to_s.upcase.to_sym
         const_set(fld, val)
       end
