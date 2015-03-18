@@ -50,6 +50,20 @@ describe Enum do
       expect{Container::Fruits.new('durian')}.to raise_error NoMethodError
     end
   end
+  describe '#as_json' do
+    it "as_json's the value" do
+      hash = double
+      expect(Meats::BACON.value).to receive(:as_json).and_return(hash)
+      expect(Meats::BACON.as_json).to eql hash
+    end
+  end
+  describe '#to_json' do
+    it "to_json's the value" do
+      json = double
+      expect(Meats::BACON.value).to receive(:to_json).and_return(json)
+      expect(Meats::BACON.to_json).to eql json
+    end
+  end
 end
 
 describe '#define_enum' do

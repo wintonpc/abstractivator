@@ -15,6 +15,14 @@ module Enum
   end
   alias_method :to_s, :inspect
 
+  def as_json(_opts={})
+    value.as_json
+  end
+
+  def to_json
+    value.to_json
+  end
+
   def self.included(base)
     base.extend ClassMethods
   end
