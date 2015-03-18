@@ -3,28 +3,37 @@ require 'abstractivator/enumerable_ext'
 require 'delegate'
 
 module Enum
-  def self.included(base)
-    base.extend ClassMethods
-    # base.extend Dsl
+
+  attr_reader :value
+
+  def initialize(value)
+    @value = value
   end
 
-  module Value; end # used to mark enum values
+  def inspect
+    "#<#{self.class.name} #{value.inspect}>"
+  end
+  alias_method :to_s, :inspect
+
+  def self.included(base)
+    base.extend ClassMethods
+  end
 
   module ClassMethods
     def values
-      self.constants.map{|sym| self.const_get(sym)}.reject{|x| x.is_a?(Class) || x.is_a?(Module)}
+      constants.map{|sym| const_get(sym)}.reject{|x| x == Enum::ClassMethods}
     end
 
     def name_for(value)
-      self.constants.detect{|sym| self.const_get(sym) == value}
+      constants.detect{|sym| const_get(sym) == value}
     end
 
     def from_symbol(sym)
-      safe_constantize("#{self.name}::#{sym.to_s.upcase}")
+      safe_constantize("#{name}::#{sym.to_s.upcase}")
     end
 
     def from(x)
-      if x.is_a?(Enum::Value)
+      if x.is_a?(Enum)
         x
       else
         values.find{|v| v.value == x}
@@ -54,23 +63,11 @@ end
 def make_enum(*fields)
   if fields.size == 1 && fields.first.is_a?(Hash) && fields.first.keys.all?{|f| f.is_a?(Symbol)}
     fields = fields.first
-    Module.new do
+    Class.new do
       include Enum
-      value_class =
-          const_set(:Value,
-                    Class.new do
-                      include Enum::Value
-                      attr_reader :enum_type, :value
-                      define_method(:initialize) do |enum_type, value|
-                        @enum_type, @value = enum_type, value
-                      end
-                      define_method(:inspect) do
-                        "#<#{self.class.name} #{value.inspect}>"
-                      end
-                      alias_method :to_s, :inspect
-                    end)
+      private_class_method :new
       fields.each_pair do |k, v|
-        val = value_class.new(self, v)
+        val = new(v)
         fld = k.to_s.upcase.to_sym
         const_set(fld, val)
       end

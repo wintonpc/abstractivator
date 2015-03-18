@@ -38,12 +38,16 @@ describe Enum do
   end
   describe '::from' do
     it 'returns the typed version of the value' do
-      x = 'apple'
-      result = Container::Fruits.from(x)
+      result = Container::Fruits.from('apple')
       expect(result).to eql Container::Fruits::APPLE
     end
     it 'works if the value is already typed' do
       expect(Container::Fruits.from(Container::Fruits::APPLE)).to eql Container::Fruits::APPLE
+    end
+  end
+  describe '::new' do
+    it 'cannot be called' do
+      expect{Container::Fruits.new('durian')}.to raise_error NoMethodError
     end
   end
 end
@@ -58,10 +62,10 @@ describe '#define_enum' do
     expect(Container::Vegetables::EGGPLANT.value).to eql 8
   end
   it 'values know their parent' do
-    expect(Container::Fruits::APPLE.enum_type).to eql Container::Fruits
-    expect(Container::Fruits::ORANGE.enum_type).to eql Container::Fruits
-    expect(Container::Vegetables::CUCUMBER.enum_type).to eql Container::Vegetables
-    expect(Container::Vegetables::EGGPLANT.enum_type).to eql Container::Vegetables
+    expect(Container::Fruits::APPLE).to be_a Container::Fruits
+    expect(Container::Fruits::ORANGE).to be_a Container::Fruits
+    expect(Container::Vegetables::CUCUMBER).to be_a Container::Vegetables
+    expect(Container::Vegetables::EGGPLANT).to be_a Container::Vegetables
   end
   it 'can define top level enumerations' do
     expect(Meats.values.map(&:value)).to eql %w(bacon more_bacon)
