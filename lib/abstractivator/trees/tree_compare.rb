@@ -9,11 +9,6 @@ require 'immutable_struct'
 module Abstractivator
   module Trees
 
-    SetMask = Struct.new(:items, :get_key)
-    def set_mask(items, get_key)
-      SetMask.new(items, get_key)
-    end
-
     Diff = ImmutableStruct.new(:path, :tree, :mask, :error)
 
     # Compares a tree to a mask.
@@ -40,35 +35,6 @@ module Abstractivator
             end
           else
             [diff(path, tree, mask)]
-          end
-        when SetMask # must check this before Enumerable because Structs are enumerable
-          if tree.is_a?(Enumerable)
-            # convert the enumerables to hashes, then compare those hashes
-            tree_items = tree
-            mask_items = mask.items.dup
-            get_key = mask.get_key
-
-            be_strict = !mask_items.delete(:*)
-            new_tree = hashify_set(tree_items, get_key)
-            new_mask = hashify_set(mask_items, get_key)
-            tree_keys = Set.new(new_tree.keys)
-            mask_keys = Set.new(new_mask.keys)
-            tree_only = tree_keys - mask_keys
-
-            # report duplicate keys
-            if new_tree.size < tree_items.size
-              diff(path, [:__duplicate_keys__, duplicates(tree_items.map(&get_key))], nil)
-            elsif new_mask.size < mask_items.size
-              diff(path, nil, [:__duplicate_keys__, duplicates(mask_items.map(&get_key))])
-              # hash comparison allows extra values in the tree.
-              # report extra values in the tree unless there was a :* in the mask
-            elsif be_strict && tree_only.any?
-              tree_only.map{|k| diff(push_path(path, k), new_tree[k], :__absent__)}
-            else # compare as hashes
-              tree_compare(new_tree, new_mask, path, index)
-            end
-          else
-            [diff(path, tree, mask.items)]
           end
         when Enumerable
           if tree.is_a?(Enumerable)
@@ -97,33 +63,29 @@ module Abstractivator
 
     private
 
-    def hashify_set(items, get_key)
-      Hash[items.map{|x| [get_key.call(x), x] }]
-    end
-
     def as_custom_mask(x)
       return x.method(:compare) if x.respond_to?(:compare)
       return x.method(:call) if x.callable? && x.parameters.size == 3
       nil
     end
 
-    def duplicates(xs)
-      xs.group_by{|x| x}.each_pair.select{|_k, v| v.size > 1}.map(&:first)
-    end
-
     def push_path(path, name)
       path + [name]
+    end
+
+    def diff(*args)
+      Trees.diff(*args)
+    end
+
+    def self.diff(path, tree, mask, error=nil)
+      Diff.new(path_string(path), tree, massage_mask_for_diff(mask), error)
     end
 
     def self.path_string(path)
       path.join('/')
     end
 
-    def diff(path, tree, mask, error=nil)
-      Diff.new(Trees.path_string(path), tree, massage_mask_for_diff(mask), error)
-    end
-
-    def massage_mask_for_diff(mask)
+    def self.massage_mask_for_diff(mask)
       if mask.callable?
         massaged = :__predicate__
         begin

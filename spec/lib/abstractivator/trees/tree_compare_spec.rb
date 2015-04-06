@@ -1,5 +1,6 @@
 require 'rspec'
 require 'abstractivator/trees/tree_compare'
+require 'abstractivator/trees/tree_compare/set_mask'
 require 'json'
 require 'rails'
 require 'pp'
