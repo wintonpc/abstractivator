@@ -4,6 +4,7 @@ require 'abstractivator/proc_ext'
 require 'sourcify'
 require 'delegate'
 require 'set'
+require 'immutable_struct'
 
 module Abstractivator
   module Trees
@@ -12,6 +13,10 @@ module Abstractivator
     def set_mask(items, get_key)
       SetMask.new(items, get_key)
     end
+
+    Diff = ImmutableStruct.new(:path, :tree, :mask, :error)
+
+
 
     # Compares a tree to a mask.
     # Returns a diff of where the tree differs from the mask.
@@ -108,8 +113,8 @@ module Abstractivator
       path.join('/')
     end
 
-    def diff(path, tree, mask)
-      {path: path_string(path), tree: tree, mask: massage_mask_for_diff(mask)}
+    def diff(path, tree, mask, error=nil)
+      Diff.new(path_string(path), tree, massage_mask_for_diff(mask), error)
     end
 
     def massage_mask_for_diff(mask)
