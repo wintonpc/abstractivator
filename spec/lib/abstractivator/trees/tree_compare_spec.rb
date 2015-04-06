@@ -111,6 +111,42 @@ describe Abstractivator::Trees do
       end
     end
 
+    context 'when providing a custom mask' do
+      class OrMask
+        include Abstractivator::Trees
+
+        def self.[](*args)
+          new(*args)
+        end
+
+        def initialize(*acceptable_masks)
+          @masks = acceptable_masks
+        end
+
+        def compare(tree, path, index)
+          comparisons = @masks.map { |mask| tree_compare(tree, mask, path, index) }
+          if comparisons.any?(&:empty?)
+            []
+          else
+            message = "At #{Abstractivator::Trees.path_string(path)}, " +
+                "expected one of the following to match: #{@masks.map(&:to_s).join(', ')}"
+            [Abstractivator::Trees::Diff.new(path, tree, self, message)]
+          end
+        end
+      end
+
+      it 'performs the custom logic given a comparer object' do
+        diff = tree_compare({a: 3}, {a: OrMask[4, 5]})
+        expect(diff.first.error).to eql 'At a, expected one of the following to match: 4, 5'
+      end
+
+      it 'performs the custom logic given a proc' do
+        diff = tree_compare({a: 3}, {a: proc{|tree, path, index| OrMask[4, 5].compare(tree, path, index)}})
+        expect(diff.first.error).to eql 'At a, expected one of the following to match: 4, 5'
+      end
+
+    end
+
     context 'when comparing sets' do
 
       def get_name
