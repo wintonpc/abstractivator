@@ -23,4 +23,5 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'activesupport', '~> 4.0'
   spec.add_runtime_dependency 'sourcify', '> 0'
   spec.add_runtime_dependency 'immutable_struct', '~> 1.1'
+  spec.add_runtime_dependency 'binding_of_caller', '~> 0.7'
 end

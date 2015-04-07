@@ -1,5 +1,4 @@
 require 'active_support/core_ext/object/deep_dup'
-require 'abstractivator/trees/block_collector'
 require 'abstractivator/proc_ext'
 require 'sourcify'
 require 'delegate'
@@ -98,5 +97,7 @@ module Abstractivator
         mask
       end
     end
+
+    extend self
   end
 end
