@@ -18,7 +18,7 @@ module Abstractivator
       def test_args(patterns, args)
         masks = patterns.map(&ArgsOf.method(:mask_for))
         diffs = Abstractivator::Trees.tree_compare(args, masks)
-        diffs.any? and raise make_argument_error(diffs)
+        diffs.any? && make_argument_error(diffs)
       end
 
       def make_argument_error(diffs)
