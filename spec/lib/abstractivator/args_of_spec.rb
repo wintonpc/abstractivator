@@ -29,7 +29,18 @@ describe Abstractivator::ArgsOf do
         expect_error([String], [8], 'Expected String but got Fixnum (8)')
         expect_error([Integer], [3.14], 'Expected Integer but got Float (3.14)')
       end
+      it 'arrays' do
+        expect_error([Integer, [Integer, Float]], [1, [2, 3]], 'Expected Float but got Fixnum (3)')
+      end
+      it 'Any' do
+        expect_valid([Any], [12.34])
+      end
     end
+  end
+
+  def expect_valid(patterns, args)
+    result = test(patterns, args)
+    expect(result).to be_falsey
   end
 
   def expect_error(patterns, args, message)

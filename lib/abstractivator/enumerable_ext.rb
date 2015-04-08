@@ -102,4 +102,24 @@ module Enumerable
     end
     sorted.map(&:first)
   end
+
+  def deep_map(&block)
+    Enumerable.deep_map(self, &block)
+  end
+
+  private
+
+  def self.deep_map(x, &block)
+    case x
+    when Hash
+      x.inject({}) do |acc, (k, v)|
+        acc[k] = deep_map(v, &block)
+        acc
+      end
+    when Array
+      x.map{|z| deep_map(z, &block)}
+    else
+      block.call(x)
+    end
+  end
 end

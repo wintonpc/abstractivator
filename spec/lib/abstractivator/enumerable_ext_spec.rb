@@ -161,4 +161,15 @@ describe Enumerable do
       expect(result).to eql({ 'Object' => Object, 'Hash' => Hash, 'Array' => Array })
     end
   end
+
+  describe '#deep_map' do
+    it 'maps nested arrays' do
+      mapped = [1,[2,3],4].deep_map{|x| x*2}
+      expect(mapped).to eql [2,[4,6],8]
+    end
+    it 'maps hashes' do
+      mapped = [{a: 1, b: [2, 3]}].deep_map{|x| x*2}
+      expect(mapped).to eql [{a: 2, b: [4, 6]}]
+    end
+  end
 end
