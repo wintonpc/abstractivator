@@ -72,6 +72,12 @@ context 'in the world of functional programming' do
     end
     it 'works with variable-arity procs' do
       expect(Proc.loose_call(->(*args) {args}, [1, 2])).to eql [1, 2]
+      expect(Proc.loose_call(->(a, *args) {[a, args]}, [1, 2, 3])).to eql [1, [2, 3]]
+    end
+    it 'uses default parameter values' do
+      expect(Proc.loose_call(proc {|a, b=5| [a, b]}, [])).to eql [nil, 5]
+      expect(Proc.loose_call(proc {|a, b=5| [a, b]}, [1])).to eql [1, 5]
+      expect(Proc.loose_call(proc {|a, b=5| [a, b]}, [1, 2])).to eql [1, 2]
     end
   end
 

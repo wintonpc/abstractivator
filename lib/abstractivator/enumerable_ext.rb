@@ -6,9 +6,14 @@ module Enumerable
   # joins items from left with items from right based on their keys.
   # get_{left,right}_key are callables which, given an item, return the item's key.
   # the defaults are used to form a pair for items which have no match.
-  # returns an array of 2-element arrays, each of which is a left/right pair.
+  # returns an array of pairs (a pair is a 2-element array), each of which contains
+  # a left and a right item.
+  # @param left [Array] the left array
+  # @param right [Array] the right array
+  # @param get_left_key [Proc] a procedure that, given a left item, returns its key
+  # @param get_right_key [Proc] a procedure that, given a right item, returns its key
+  # @param left_default [Proc, Object]
   def self.outer_join(left, right, get_left_key, get_right_key, left_default, right_default)
-
     ls = left.hash_map(get_left_key)
     rs = right.hash_map(get_right_key)
 
@@ -34,10 +39,20 @@ module Enumerable
     result
   end
 
+  def outer_join(right, get_left_key, get_right_key, default_value)
+    Enumerable.outer_join(self, right, get_left_key, get_right_key, default_value, default_value)
+  end
+
+  # like outer_join, except unmatched items are excluded, rather than being
+  # paired with a default value.
   def self.inner_join(left, right, get_left_key, get_right_key)
     sentinel = Object.new
     result = self.outer_join(left, right, get_left_key, get_right_key, sentinel, sentinel)
     result.reject { |pair| pair.first == sentinel || pair.last == sentinel }
+  end
+
+  def inner_join(right, get_left_key, get_right_key)
+    Enumerable.inner_join(self, right, get_left_key, get_right_key)
   end
 
   def self.get_default(default, other_side_value)
@@ -50,14 +65,6 @@ module Enumerable
 
   def hash_map(get_key=->x{x}, &get_value)
     Hash[self.map{|x| [Proc.loose_call(get_key, [x]), get_value ? get_value.call(x) : x]}]
-  end
-
-  def outer_join(right, get_left_key, get_right_key, default_value)
-    Enumerable.outer_join(self, right, get_left_key, get_right_key, default_value, default_value)
-  end
-
-  def inner_join(right, get_left_key, get_right_key)
-    Enumerable.inner_join(self, right, get_left_key, get_right_key)
   end
 
   def uniq?
