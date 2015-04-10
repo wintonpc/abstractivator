@@ -108,10 +108,10 @@ describe Enumerable do
     end
     context 'with value and block' do
       it 'returns the matching element' do
-        expect(xs.detect('Hash', &:name)).to eql Hash
+        expect(xs.detect('Hash') { |x| x.name }).to eql Hash
       end
       it 'returns the matching element' do
-        expect([].detect('Hash', &:name)).to be_nil
+        expect([].detect('Hash') { |x| x.name }).to be_nil
       end
     end
   end
@@ -159,6 +159,22 @@ describe Enumerable do
     it 'the key transformer is called loosely' do
       result = xs.hash_map(:to_s)
       expect(result).to eql({ 'Object' => Object, 'Hash' => Hash, 'Array' => Array })
+    end
+  end
+
+  describe '#stable_sort' do
+    it 'sorts stably' do
+      xs = [-2, 2, 1, -1]
+      result = xs.stable_sort{|a, b| a.abs <=> b.abs}
+      expected_result = [1, -1, -2, 2]
+      expect(result).to eql expected_result
+
+      normal_sort_result = xs.sort{|a, b| a.abs <=> b.abs}
+      expect(normal_sort_result).to_not eql expected_result
+    end
+
+    it 'does not require a block' do
+      expect([3, 2, 1].stable_sort).to eql [1, 2, 3]
     end
   end
 end

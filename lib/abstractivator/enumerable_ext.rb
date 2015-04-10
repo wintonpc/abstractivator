@@ -63,14 +63,16 @@ module Enumerable
     Enumerable.inner_join(self, right, get_left_key, get_right_key)
   end
 
-  def self.proc?(x)
-    x.respond_to?(:call)
-  end
-
-  def hash_map(get_key=->x{x}, &get_value)
+  # Creates a map from the enumerable.
+  # @param get_key [Proc, Object] A proc (called with loose call semantics) used to obtain
+  #   the key for the given item. Defaults to the identity function.
+  # @param get_value [Block] A block that returns value for the given item. Defaults to
+  #   the identity function.
+  def hash_map(get_key=Proc.identity, &get_value)
     Hash[self.map{|x| [Proc.loose_call(get_key, [x]), get_value ? get_value.call(x) : x]}]
   end
 
+  # True if the enuemration items are unique; otherwise false.
   def uniq?
     seen = Set.new
     each_with_index do |x, i|
@@ -80,6 +82,9 @@ module Enumerable
     true
   end
 
+  # An extension to Enumerable#detect that offers two additional
+  # calling styles to simplify typical use cases. See specs
+  # for usage.
   orig_detect = instance_method(:detect)
   define_method :detect do |*args, &block|
     detect = orig_detect.bind(self)
@@ -95,15 +100,23 @@ module Enumerable
     end
   end
 
+  # #inject is "left fold". #inject_right is "right fold".
+  # @see http://en.wikipedia.org/wiki/Fold_%28higher-order_function%29
   def inject_right(*args, &block)
     self.reverse_each.inject(*args, &block) # reverse_each to avoid duplicating the enumerable, when possible
   end
 
+  # Pads the end of an enumeration with additional values, up to a given total size
+  # @param n [Integer] The final size
+  # @param value [Object] The object to pad with. Defaults to nil.
+  # @yieldreturn [Object] If provided, the block overrides the value argument
+  #   and is called to obtain the padding value, once for each item.
   def pad_right(n, value=nil, &block)
     block ||= proc { value }
     self + ([n-self.size, 0].max).times.map(&block)
   end
 
+  # Like #sort, but does not reorder comparable items.
   def stable_sort(&compare)
     compare = compare || ->(a, b){a <=> b}
     xis = self.each_with_index.map{|x, i| [x, i]}
