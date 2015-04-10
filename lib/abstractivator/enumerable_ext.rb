@@ -12,10 +12,18 @@ module Enumerable
   # @param right [Array] the right array
   # @param get_left_key [Proc] a procedure that, given a left item, returns its key
   # @param get_right_key [Proc] a procedure that, given a right item, returns its key
-  # @param left_default [Proc, Object]
+  # @param left_default [Proc, Object] an object called with loose call semantics
+  #   (@see Proc::loose_call) to obtain the default left value for a given right value.
+  #   It is passed the right value.
+  # @param right_default [Proc, Object] an object called with loose call semantics
+  #   (@see Proc::loose_call) to obtain the default right value for a given left value.
+  #   It is passed the left value.
   def self.outer_join(left, right, get_left_key, get_right_key, left_default, right_default)
     ls = left.hash_map(get_left_key)
     rs = right.hash_map(get_right_key)
+
+    left_default = Proc.loosen_args(left_default)
+    right_default = Proc.loosen_args(right_default)
 
     raise 'duplicate left keys' if ls.size < left.size
     raise 'duplicate right keys' if rs.size < right.size
@@ -27,13 +35,13 @@ module Enumerable
       if r
         rs.delete(k)
       else
-        r = get_default(right_default, l)
+        r = right_default.call(l)
       end
       result.push [l, r]
     end
 
     rs.each_pair do |_, r|
-      result.push [get_default(left_default, r), r]
+      result.push [left_default.call(r), r]
     end
 
     result
@@ -53,10 +61,6 @@ module Enumerable
 
   def inner_join(right, get_left_key, get_right_key)
     Enumerable.inner_join(self, right, get_left_key, get_right_key)
-  end
-
-  def self.get_default(default, other_side_value)
-    default.callable? ? default.call(other_side_value) : default
   end
 
   def self.proc?(x)
