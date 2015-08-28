@@ -8,9 +8,6 @@ describe Enumerable do
       result = xs.stable_sort{|a, b| a.abs <=> b.abs}
       expected_result = [1, -1, -2, 2]
       expect(result).to eql expected_result
-
-      normal_sort_result = xs.sort{|a, b| a.abs <=> b.abs}
-      expect(normal_sort_result).to_not eql expected_result
     end
 
     it 'does not require a block' do
