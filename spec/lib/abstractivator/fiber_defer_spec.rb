@@ -1,6 +1,7 @@
 require 'rspec'
 require 'abstractivator/fiber_defer'
 require 'eventmachine'
+require 'mongoid'
 
 describe Abstractivator::FiberDefer do
   include Abstractivator::FiberDefer
@@ -69,6 +70,32 @@ describe Abstractivator::FiberDefer do
           EM.stop
         end
       end
+    end
+  end
+
+  describe '#mongoid_fiber_defer' do
+    it 'restores the mongoid database override within and after the deferred action' do
+      the_log = []
+      log = proc { the_log << Mongoid::Threaded.database_override }
+      EM.run do
+        with_fiber_defer do
+          Mongoid.override_database('good')
+          mongoid_fiber_defer do
+            sleep(0.1) # let the main thread proceed to set 'bad'
+            log.call # regardless, we should get 'good' here
+            EM.next_tick do
+              Mongoid.override_database('bad') # something else sets 'bad' again on the main thread
+              log.call
+            end
+            sleep(0.1) # allow main thread to run
+          end
+          log.call # back on the main thread now, we should see 'good'
+          EM.stop
+        end
+        Mongoid.override_database('bad') # this runs right after the background thread is started
+        log.call
+      end
+      expect(the_log).to eql %w(bad good bad good)
     end
   end
 end
