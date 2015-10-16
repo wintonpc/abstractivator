@@ -71,6 +71,30 @@ describe Abstractivator::FiberDefer do
         end
       end
     end
+    it 'works with simultaneous deferred actions' do
+      EM.run do
+        log = []
+        EM.next_tick do
+          with_fiber_defer do
+            log << 'start1'
+            fiber_defer { sleep(0.1) }
+            log << 'end1'
+          end
+        end
+        EM.next_tick do
+          with_fiber_defer do
+            log << 'start2'
+            fiber_defer { sleep(0.2) }
+            log << 'end2'
+            expect(log).to eql %w(start1 start2 end1 end2)
+            EM.stop
+          end
+        end
+        EM.next_tick do
+          sleep(0.3)
+        end
+      end
+    end
   end
 
   describe '#mongoid_fiber_defer' do
@@ -96,6 +120,14 @@ describe Abstractivator::FiberDefer do
         log.call
       end
       expect(the_log).to eql %w(bad good bad good)
+    end
+    it 'returns the value of its block' do
+      EM.run do
+        with_fiber_defer do
+          expect(mongoid_fiber_defer{42}).to eql 42
+          EM.stop
+        end
+      end
     end
   end
 end

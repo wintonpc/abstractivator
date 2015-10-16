@@ -36,12 +36,15 @@ module Abstractivator
 
     def mongoid_fiber_defer(&action)
       db = Mongoid::Threaded.database_override
-      fiber_defer do
-        # in the background thread
-        Mongoid.override_database(db) # set the db to what it was in the main thread
-        action.call
+      begin
+        fiber_defer do
+          # in the background thread
+          Mongoid.override_database(db) # set the db to what it was in the main thread
+          action.call
+        end
+      ensure
+        Mongoid.override_database(db) # main thread has moved on before we resume here. restore the db override.
       end
-      Mongoid.override_database(db) # main thread has moved on before we resume here. restore the db override.
     end
   end
 end
