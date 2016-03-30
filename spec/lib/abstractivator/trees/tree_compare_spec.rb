@@ -53,16 +53,7 @@ describe Abstractivator::Trees do
     example 'compares with predicates',
             tree:   {a: 1},
             mask:   {a: proc {|x| x.even?}},
-            result: [{path: 'a', tree: 1, mask: 'proc { |x| x.even? }'}]
-
-    example 'compares with predicates (degrades gracefully when source code is unavailable)',
-            tree:   {a: 1},
-            mask:   {a: :even?.to_proc},
             result: [{path: 'a', tree: 1, mask: :__predicate__}]
-
-    it 'compares with predicates (lets non-sourcify errors through)' do
-      expect{tree_compare({a: 1}, {a: proc { raise 'oops' }})}.to raise_error
-    end
 
     example 'can ensure values are absent with :-',
             tree:   {a: 1},

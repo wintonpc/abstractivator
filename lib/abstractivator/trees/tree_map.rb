@@ -1,6 +1,5 @@
 require 'active_support/core_ext/object/deep_dup'
 require 'abstractivator/trees/block_collector'
-require 'sourcify'
 require 'delegate'
 require 'set'
 

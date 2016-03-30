@@ -1,7 +1,6 @@
 require 'active_support/core_ext/object/deep_dup'
 require 'abstractivator/trees/block_collector'
 require 'abstractivator/proc_ext'
-require 'sourcify'
 require 'delegate'
 require 'set'
 
@@ -114,13 +113,7 @@ module Abstractivator
 
     def massage_mask_for_diff(mask)
       if mask.callable?
-        massaged = :__predicate__
-        begin
-          massaged = mask.to_source
-        rescue Exception => e
-          raise unless e.class.name.start_with?('Sourcify')
-        end
-        massaged
+        :__predicate__
       else
         mask
       end
